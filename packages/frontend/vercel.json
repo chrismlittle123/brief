@@ -3,6 +3,10 @@
     {
       "path": "/api/shame-bot",
       "schedule": "0 16 * * 5"
+    },
+    {
+      "path": "/api/shame-bot",
+      "schedule": "0 8 * * 1"
     }
   ]
 }
