@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         // Add Person property if user email is available
         ...(userEmail && {
           Person: {
-            email: userEmail,
+            people: [{ email: userEmail }],
           },
         }),
       },
