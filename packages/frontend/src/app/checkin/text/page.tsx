@@ -52,7 +52,7 @@ export default function TextCheckinPage() {
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm">Exit</span>
             </Link>
-            <h1 className="font-cursive text-2xl text-foreground">Brief</h1>
+            <h1 className="font-cursive text-4xl text-foreground">Brief</h1>
           </div>
         </div>
       </header>

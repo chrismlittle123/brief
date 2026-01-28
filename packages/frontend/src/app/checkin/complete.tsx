@@ -38,7 +38,7 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-2xl px-6 py-4 flex items-center justify-between">
-          <h1 className="font-cursive text-3xl text-foreground">Brief</h1>
+          <h1 className="font-cursive text-4xl text-foreground">Brief</h1>
           <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary flex items-center gap-1.5">
             <Sparkles className="h-3 w-3" />
             AI Generated

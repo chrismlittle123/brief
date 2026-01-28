@@ -9,7 +9,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-4xl px-6 py-4">
-          <h1 className="font-cursive text-3xl text-foreground">Brief</h1>
+          <h1 className="font-cursive text-4xl text-foreground">Brief</h1>
         </div>
       </header>
 
@@ -19,7 +19,7 @@ export default function HomePage() {
           <h2 className="text-5xl font-bold tracking-tight text-foreground md:text-6xl">
             Fill in the gaps.
           </h2>
-          <p className="mt-2 font-cursive text-4xl text-primary md:text-5xl">
+          <p className="mt-2 font-cursive text-5xl text-primary md:text-6xl">
             Keep it brief.
           </p>
           <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
