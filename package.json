@@ -1,0 +1,14 @@
+{
+  "name": "brief",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter frontend dev",
+    "build": "pnpm --filter frontend build",
+    "dev:backend": "pnpm --filter backend dev",
+    "build:all": "pnpm -r build"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

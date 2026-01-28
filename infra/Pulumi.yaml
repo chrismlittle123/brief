@@ -1,0 +1,6 @@
+name: brief
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+description: Brief infrastructure - secrets and resources
