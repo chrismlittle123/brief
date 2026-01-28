@@ -1,41 +1,24 @@
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
+// Secrets can come from:
+// 1. Vercel environment variables (simplest for Vercel deployments)
+// 2. GCP Secret Manager (for local dev with gcloud auth)
 
 const PROJECT_ID = "brief";
 const ENVIRONMENT = "dev";
 
-// Cache secrets in memory to avoid repeated API calls
-const secretsCache: Record<string, string> = {};
-
-let client: SecretManagerServiceClient | null = null;
-
-function getClient(): SecretManagerServiceClient {
-  if (!client) {
-    // Check for base64-encoded service account credentials (for Vercel)
-    const credentialsBase64 = process.env.GCP_SERVICE_ACCOUNT_KEY;
-
-    if (credentialsBase64) {
-      const credentials = JSON.parse(
-        Buffer.from(credentialsBase64, "base64").toString("utf8")
-      );
-      client = new SecretManagerServiceClient({ credentials });
-    } else {
-      // Use Application Default Credentials (for local dev with gcloud auth)
-      client = new SecretManagerServiceClient();
-    }
+// Check Vercel env vars first, then fall back to GCP Secret Manager
+async function getSecret(secretName: string, envVarName: string): Promise<string> {
+  // First, check if the secret is available as a direct env var (Vercel)
+  const envValue = process.env[envVarName];
+  if (envValue) {
+    return envValue;
   }
-  return client;
-}
 
-async function getSecret(secretName: string): Promise<string> {
+  // Fall back to GCP Secret Manager (local dev)
+  const { SecretManagerServiceClient } = await import("@google-cloud/secret-manager");
+  const client = new SecretManagerServiceClient();
   const fullSecretName = `brief-${secretName}-secret-${ENVIRONMENT}`;
 
-  // Check cache first
-  if (secretsCache[fullSecretName]) {
-    return secretsCache[fullSecretName];
-  }
-
   try {
-    const client = getClient();
     const [version] = await client.accessSecretVersion({
       name: `projects/${PROJECT_ID}/secrets/${fullSecretName}/versions/latest`,
     });
@@ -45,12 +28,7 @@ async function getSecret(secretName: string): Promise<string> {
       throw new Error(`Secret ${fullSecretName} has no payload`);
     }
 
-    const secret = typeof payload === "string" ? payload : payload.toString("utf8");
-
-    // Cache the secret
-    secretsCache[fullSecretName] = secret;
-
-    return secret;
+    return typeof payload === "string" ? payload : payload.toString("utf8");
   } catch (error) {
     console.error(`Failed to fetch secret ${fullSecretName}:`, error);
     throw error;
@@ -58,13 +36,13 @@ async function getSecret(secretName: string): Promise<string> {
 }
 
 export async function getOpenAIApiKey(): Promise<string> {
-  return getSecret("openai-api-key");
+  return getSecret("openai-api-key", "OPENAI_API_KEY");
 }
 
 export async function getNotionApiKey(): Promise<string> {
-  return getSecret("notion-api-key");
+  return getSecret("notion-api-key", "NOTION_API_KEY");
 }
 
 export async function getNotionDatabaseId(): Promise<string> {
-  return getSecret("notion-database-id");
+  return getSecret("notion-database-id", "NOTION_DATABASE_ID");
 }
