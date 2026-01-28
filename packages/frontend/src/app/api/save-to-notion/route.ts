@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Client } from "@notionhq/client";
+import { cookies } from "next/headers";
 import { getNotionApiKey, getNotionDatabaseId } from "@/lib/secrets";
 
 export async function POST(request: NextRequest) {
   try {
     const { report } = await request.json();
+
+    // Get user email from cookie
+    const cookieStore = await cookies();
+    const userEmail = cookieStore.get("brief_user_email")?.value;
 
     const notionApiKey = getNotionApiKey();
     const databaseId = getNotionDatabaseId();
@@ -43,6 +48,12 @@ export async function POST(request: NextRequest) {
             start: weekOfDate,
           },
         },
+        // Add Person property if user email is available
+        ...(userEmail && {
+          Person: {
+            email: userEmail,
+          },
+        }),
       },
       children: [
         // Summary section
