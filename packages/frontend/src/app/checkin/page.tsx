@@ -53,7 +53,7 @@ export default function CheckinPage() {
     }, 2000);
   };
 
-  if (isComplete) {
+  if (isComplete || !currentQuestion) {
     return <CompletePage responses={responses} />;
   }
 
