@@ -2,7 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import OpenAI from "openai";
-import { Readable } from "stream";
+import { Client } from "@notionhq/client";
 
 const fastify = Fastify({
   logger: true,
@@ -12,6 +12,13 @@ const fastify = Fastify({
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// Initialize Notion client
+const notion = new Client({
+  auth: process.env.NOTION_API_KEY,
+});
+
+const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID || "";
 
 // Register plugins
 await fastify.register(cors, {
@@ -186,6 +193,145 @@ Return ONLY valid JSON with this structure:
     fastify.log.error(error);
     return reply.status(500).send({
       error: "Report refinement failed",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// Save to Notion endpoint
+fastify.post("/save-to-notion", async (request, reply) => {
+  try {
+    const { report } = request.body as {
+      report: {
+        summary: string;
+        thisWeek: string[];
+        blockers: string[];
+        nextWeek: string[];
+        progress: number;
+        status: string;
+      };
+    };
+
+    if (!NOTION_DATABASE_ID) {
+      throw new Error("NOTION_DATABASE_ID not configured");
+    }
+
+    // Get current week's Monday date
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - now.getDay() + 1);
+    const weekOfDate = monday.toISOString().split("T")[0];
+
+    // Create page in Notion
+    const response = await notion.pages.create({
+      parent: { database_id: NOTION_DATABASE_ID },
+      properties: {
+        Name: {
+          title: [
+            {
+              text: {
+                content: `Weekly Update - ${now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`,
+              },
+            },
+          ],
+        },
+        Progress: {
+          number: report.progress,
+        },
+        Status: {
+          select: {
+            name: report.status,
+          },
+        },
+        "Week of": {
+          date: {
+            start: weekOfDate,
+          },
+        },
+      },
+      children: [
+        // Summary section
+        {
+          object: "block",
+          type: "heading_2",
+          heading_2: {
+            rich_text: [{ type: "text", text: { content: "Summary" } }],
+          },
+        },
+        {
+          object: "block",
+          type: "paragraph",
+          paragraph: {
+            rich_text: [{ type: "text", text: { content: report.summary } }],
+          },
+        },
+        // This Week section
+        {
+          object: "block",
+          type: "heading_2",
+          heading_2: {
+            rich_text: [{ type: "text", text: { content: "This Week" } }],
+          },
+        },
+        ...report.thisWeek.map((item) => ({
+          object: "block" as const,
+          type: "bulleted_list_item" as const,
+          bulleted_list_item: {
+            rich_text: [{ type: "text" as const, text: { content: item } }],
+          },
+        })),
+        // Blockers section
+        {
+          object: "block",
+          type: "heading_2",
+          heading_2: {
+            rich_text: [{ type: "text", text: { content: "Blockers" } }],
+          },
+        },
+        ...(report.blockers.length > 0
+          ? report.blockers.map((item) => ({
+              object: "block" as const,
+              type: "bulleted_list_item" as const,
+              bulleted_list_item: {
+                rich_text: [{ type: "text" as const, text: { content: item } }],
+              },
+            }))
+          : [
+              {
+                object: "block" as const,
+                type: "paragraph" as const,
+                paragraph: {
+                  rich_text: [{ type: "text" as const, text: { content: "No blockers this week!" } }],
+                },
+              },
+            ]),
+        // Next Week section
+        {
+          object: "block",
+          type: "heading_2",
+          heading_2: {
+            rich_text: [{ type: "text", text: { content: "Next Week" } }],
+          },
+        },
+        ...report.nextWeek.map((item) => ({
+          object: "block" as const,
+          type: "bulleted_list_item" as const,
+          bulleted_list_item: {
+            rich_text: [{ type: "text" as const, text: { content: item } }],
+          },
+        })),
+      ],
+    });
+
+    return {
+      success: true,
+      pageId: response.id,
+      url: `https://notion.so/${response.id.replace(/-/g, "")}`,
+    };
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.status(500).send({
+      error: "Failed to save to Notion",
       message: error instanceof Error ? error.message : "Unknown error",
     });
   }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Check, Sparkles, MessageCircle, ExternalLink, AlertCircle, X, Loader2 } from "lucide-react";
-import { generateReport, refineReport, Report } from "@/lib/api";
+import { generateReport, refineReport, saveToNotion, Report } from "@/lib/api";
 
 function getWeekOf(): string {
   const now = new Date();
@@ -20,6 +20,7 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
   const [error, setError] = useState<string | null>(null);
   const [editInstruction, setEditInstruction] = useState("");
   const [isRefining, setIsRefining] = useState(false);
+  const [notionUrl, setNotionUrl] = useState<string | null>(null);
 
   useEffect(() => {
     async function generate() {
@@ -251,12 +252,18 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
         {/* Save to Notion Button */}
         <div className="mt-8">
           <button
-            onClick={() => {
+            onClick={async () => {
+              if (!report) return;
               setIsSaving(true);
-              setTimeout(() => {
-                setIsSaving(false);
+              try {
+                const result = await saveToNotion(report);
+                setNotionUrl(result.url);
                 setShowSavedPopup(true);
-              }, 1500);
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed to save to Notion");
+              } finally {
+                setIsSaving(false);
+              }
             }}
             disabled={isSaving}
             className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
@@ -303,10 +310,15 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
               <h3 className="text-xl font-semibold text-foreground mb-2">Saved to Notion!</h3>
               <p className="text-muted-foreground">Your weekly update has been saved successfully.</p>
               <div className="mt-6">
-                <button className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+                <a
+                  href={notionUrl || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                >
                   <ExternalLink className="h-4 w-4" />
                   View in Notion
-                </button>
+                </a>
               </div>
             </div>
           </div>

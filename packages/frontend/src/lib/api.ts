@@ -72,3 +72,22 @@ export async function refineReport(
 
   return response.json();
 }
+
+export async function saveToNotion(
+  report: Report
+): Promise<{ success: boolean; pageId: string; url: string }> {
+  const response = await fetch(`${API_URL}/save-to-notion`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ report }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to save to Notion");
+  }
+
+  return response.json();
+}
