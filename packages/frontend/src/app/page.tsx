@@ -67,27 +67,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Preview of questions */}
-      <section className="border-t border-border bg-muted/30">
-        <div className="mx-auto max-w-4xl px-6 py-16">
-          <h3 className="text-center text-sm font-medium uppercase tracking-wider text-muted-foreground">
-            What you&apos;ll be asked
-          </h3>
-          <div className="mt-8 space-y-3">
-            {QUESTIONS.map((q, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 rounded-lg border border-border bg-card p-4"
-              >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                  {i + 1}
-                </span>
-                <span className="text-foreground">{q}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
     </main>
   );
 }
@@ -112,11 +91,3 @@ function FeatureCard({
   );
 }
 
-const QUESTIONS = [
-  "What did you work on this week?",
-  "What's your progress percentage?",
-  "Are you on track for your deadline?",
-  "Any blockers or challenges?",
-  "What's planned for next week?",
-  "Anything else to flag?",
-];
