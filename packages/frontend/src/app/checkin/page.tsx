@@ -36,6 +36,19 @@ export default function CheckinPage() {
   const progress = ((currentStep) / QUESTIONS.length) * 100;
   const hasCurrentResponse = responses[currentQuestion?.id];
 
+  // Handle spacebar to start/stop recording
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !e.repeat) {
+        e.preventDefault();
+        simulateResponse();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hasCurrentResponse, showResponse, isListening]);
+
   const simulateResponse = () => {
     // If there's already a response showing, fade it out and start new recording
     if (hasCurrentResponse && showResponse) {
@@ -216,6 +229,11 @@ export default function CheckinPage() {
                 ? "Re-record"
                 : "Tap to speak"
             }
+          </p>
+
+          {/* Keyboard hint */}
+          <p className="mt-2 text-[10px] text-muted-foreground/60">
+            or press <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">space</kbd> to {isListening ? "stop" : "start"}
           </p>
         </div>
 
