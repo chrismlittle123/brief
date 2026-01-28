@@ -11,18 +11,26 @@ function getWeekOf(): string {
   return now.toLocaleDateString("en-US", options);
 }
 
-export function CompletePage({ responses }: { responses: Record<string, string> }) {
+interface CompletePageProps {
+  responses: Record<string, string>;
+  initialReport?: Report;
+}
+
+export function CompletePage({ responses, initialReport }: CompletePageProps) {
   const [showEditChat, setShowEditChat] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
-  const [report, setReport] = useState<Report | null>(null);
-  const [isGenerating, setIsGenerating] = useState(true);
+  const [report, setReport] = useState<Report | null>(initialReport || null);
+  const [isGenerating, setIsGenerating] = useState(!initialReport);
   const [error, setError] = useState<string | null>(null);
   const [editInstruction, setEditInstruction] = useState("");
   const [isRefining, setIsRefining] = useState(false);
   const [notionUrl, setNotionUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    // Skip generation if we already have an initial report
+    if (initialReport) return;
+
     async function generate() {
       try {
         const generated = await generateReport(responses);
@@ -34,7 +42,7 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
       }
     }
     generate();
-  }, [responses]);
+  }, [responses, initialReport]);
 
   if (isGenerating) {
     return (
