@@ -74,6 +74,7 @@
   --color-ring: hsl(var(--ring));
   --radius: var(--radius);
   --font-sans: var(--font-geist-sans);
+  --font-cursive: var(--font-cursive), cursive;
 }
 
 * {
@@ -87,6 +88,3 @@ body {
   letter-spacing: -0.003em;
 }
 
-.font-cursive {
-  font-family: var(--font-cursive), cursive;
-}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Cedarville_Cursive } from "next/font/google";
+import { Geist, Sacramento } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -7,7 +7,7 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const cedarvilleCursive = Cedarville_Cursive({
+const sacramento = Sacramento({
   variable: "--font-cursive",
   subsets: ["latin"],
   weight: "400",
@@ -26,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${cedarvilleCursive.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${sacramento.variable} antialiased`}>
         {children}
       </body>
     </html>

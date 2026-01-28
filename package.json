@@ -9,6 +9,7 @@
     "build:all": "pnpm -r build"
   },
   "devDependencies": {
+    "puppeteer": "^24.36.1",
     "typescript": "^5.0.0"
   }
 }

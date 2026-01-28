@@ -203,7 +203,6 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
               setTimeout(() => {
                 setIsSaving(false);
                 setShowSavedPopup(true);
-                setTimeout(() => setShowSavedPopup(false), 3000);
               }, 1500);
             }}
             disabled={isSaving}
@@ -236,19 +235,24 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
         {/* Saved Popup */}
         {showSavedPopup && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="rounded-2xl bg-card p-8 shadow-xl text-center animate-in fade-in zoom-in duration-200">
+            <div className="rounded-2xl bg-card p-8 shadow-xl text-center animate-in fade-in zoom-in duration-200 max-w-sm mx-4">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
                 <Check className="h-8 w-8 text-success" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">Saved to Notion!</h3>
               <p className="text-muted-foreground">Your weekly update has been saved successfully.</p>
-              <button
-                onClick={() => setShowSavedPopup(false)}
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-              >
-                <ExternalLink className="h-4 w-4" />
-                View in Notion
-              </button>
+              <div className="mt-6 flex flex-col gap-3">
+                <button className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+                  <ExternalLink className="h-4 w-4" />
+                  View in Notion
+                </button>
+                <button
+                  onClick={() => setShowSavedPopup(false)}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Exit
+                </button>
+              </div>
             </div>
           </div>
         )}
