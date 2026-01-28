@@ -3,16 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Check, Sparkles, MessageCircle, ExternalLink, AlertCircle, X, Loader2 } from "lucide-react";
-import { generateReport } from "@/lib/api";
-
-interface Report {
-  summary: string;
-  thisWeek: string[];
-  blockers: string[];
-  nextWeek: string[];
-  progress: number;
-  status: string;
-}
+import { generateReport, refineReport, Report } from "@/lib/api";
 
 function getWeekOf(): string {
   const now = new Date();
@@ -27,6 +18,8 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
   const [report, setReport] = useState<Report | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editInstruction, setEditInstruction] = useState("");
+  const [isRefining, setIsRefining] = useState(false);
 
   useEffect(() => {
     async function generate() {
@@ -204,19 +197,52 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
               <span className="font-medium text-foreground">Talk to Brief</span>
             </div>
             <textarea
+              value={editInstruction}
+              onChange={(e) => setEditInstruction(e.target.value)}
               placeholder="e.g., 'Add that I also fixed a bug in the auth flow' or 'Change the progress to 80%'"
               className="w-full rounded-lg border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[80px] resize-none"
+              disabled={isRefining}
             />
             <div className="flex justify-end gap-2 mt-3">
               <button
-                onClick={() => setShowEditChat(false)}
-                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setShowEditChat(false);
+                  setEditInstruction("");
+                }}
+                disabled={isRefining}
+                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
               >
                 Cancel
               </button>
-              <button className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-                <Sparkles className="h-4 w-4" />
-                Update Report
+              <button
+                onClick={async () => {
+                  if (!report || !editInstruction.trim()) return;
+                  setIsRefining(true);
+                  try {
+                    const updatedReport = await refineReport(report, editInstruction);
+                    setReport(updatedReport);
+                    setShowEditChat(false);
+                    setEditInstruction("");
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Failed to update report");
+                  } finally {
+                    setIsRefining(false);
+                  }
+                }}
+                disabled={isRefining || !editInstruction.trim()}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {isRefining ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Update Report
+                  </>
+                )}
               </button>
             </div>
           </div>

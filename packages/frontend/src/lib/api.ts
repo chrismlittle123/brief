@@ -43,3 +43,32 @@ export async function generateReport(
 
   return response.json();
 }
+
+export interface Report {
+  summary: string;
+  thisWeek: string[];
+  blockers: string[];
+  nextWeek: string[];
+  progress: number;
+  status: string;
+}
+
+export async function refineReport(
+  currentReport: Report,
+  instruction: string
+): Promise<Report> {
+  const response = await fetch(`${API_URL}/refine-report`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ currentReport, instruction }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Report refinement failed");
+  }
+
+  return response.json();
+}
