@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Mic, MicOff, Check } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, Check, ChevronRight } from "lucide-react";
 import { CompletePage } from "./complete";
 
 const QUESTIONS = [
@@ -29,11 +29,29 @@ export default function CheckinPage() {
   const [isListening, setIsListening] = useState(false);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [isComplete, setIsComplete] = useState(false);
+  const [showResponse, setShowResponse] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   const currentQuestion = QUESTIONS[currentStep];
   const progress = ((currentStep) / QUESTIONS.length) * 100;
+  const hasCurrentResponse = responses[currentQuestion?.id];
 
   const simulateResponse = () => {
+    // If there's already a response showing, fade it out and start new recording
+    if (hasCurrentResponse && showResponse) {
+      setIsExiting(true);
+      setTimeout(() => {
+        setShowResponse(false);
+        setIsExiting(false);
+        startListening();
+      }, 500);
+      return;
+    }
+
+    startListening();
+  };
+
+  const startListening = () => {
     setIsListening(true);
 
     // Simulate listening for 2 seconds
@@ -42,15 +60,24 @@ export default function CheckinPage() {
       const response = MOCK_RESPONSES[currentQuestion.id];
       setResponses(prev => ({ ...prev, [currentQuestion.id]: response }));
 
-      // Move to next question after a brief pause
+      // Gentle entrance of response
       setTimeout(() => {
-        if (currentStep < QUESTIONS.length - 1) {
-          setCurrentStep(prev => prev + 1);
-        } else {
-          setIsComplete(true);
-        }
-      }, 1000);
+        setShowResponse(true);
+      }, 100);
     }, 2000);
+  };
+
+  const goToNextQuestion = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      setShowResponse(false);
+      setIsExiting(false);
+      if (currentStep < QUESTIONS.length - 1) {
+        setCurrentStep(prev => prev + 1);
+      } else {
+        setIsComplete(true);
+      }
+    }, 400);
   };
 
   if (isComplete || !currentQuestion) {
@@ -113,28 +140,48 @@ export default function CheckinPage() {
           </h2>
 
           {/* Audio waveform visualization (mock) */}
-          <div className="my-8 flex items-center justify-center gap-1">
+          <div className={`my-8 flex items-center justify-center gap-1.5 transition-opacity duration-300 ${
+            hasCurrentResponse && showResponse && !isListening ? "opacity-30" : "opacity-100"
+          }`}>
             {[...Array(7)].map((_, i) => (
               <div
                 key={i}
-                className={`w-1 rounded-full transition-all duration-150 ${
+                className={`w-1.5 rounded-full transition-all duration-300 ease-out ${
                   isListening ? "bg-primary" : "bg-muted"
                 }`}
                 style={{
                   height: isListening
-                    ? `${Math.random() * 32 + 16}px`
+                    ? `${Math.sin((Date.now() / 200) + i) * 16 + 24}px`
                     : "8px",
-                  animationDelay: `${i * 100}ms`,
+                  transitionDelay: `${i * 50}ms`,
                 }}
               />
             ))}
           </div>
 
-          {/* Response display */}
-          {responses[currentQuestion.id] && (
-            <div className="mb-6 rounded-lg bg-muted/50 p-4 text-left">
-              <p className="text-sm text-muted-foreground">Your response:</p>
-              <p className="mt-1 text-foreground">{responses[currentQuestion.id]}</p>
+          {/* Response display with beautiful entrance/exit */}
+          {hasCurrentResponse && showResponse && (
+            <div
+              className={`mb-6 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-all duration-500 ease-out ${
+                isExiting
+                  ? "opacity-0 translate-y-4 scale-95"
+                  : "opacity-100 translate-y-0 scale-100"
+              }`}
+              style={{
+                animation: !isExiting ? "responseEnter 0.6s ease-out" : undefined,
+              }}
+            >
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Your response</p>
+              <p className="text-foreground leading-relaxed">{responses[currentQuestion.id]}</p>
+
+              {/* Next question button */}
+              <button
+                onClick={goToNextQuestion}
+                className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                {currentStep < QUESTIONS.length - 1 ? "Next question" : "Finish"}
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           )}
 
@@ -142,21 +189,33 @@ export default function CheckinPage() {
           <button
             onClick={simulateResponse}
             disabled={isListening}
-            className={`inline-flex h-16 w-16 items-center justify-center rounded-full transition-all ${
+            className={`inline-flex h-16 w-16 items-center justify-center rounded-full transition-all duration-300 ${
               isListening
-                ? "bg-destructive text-destructive-foreground animate-pulse"
-                : "bg-primary text-primary-foreground hover:bg-primary/90"
+                ? "bg-destructive text-destructive-foreground"
+                : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
             }`}
+            style={{
+              animation: isListening ? "gentlePulse 1.5s ease-in-out infinite" : undefined,
+            }}
           >
-            {isListening ? (
-              <MicOff className="h-6 w-6" />
-            ) : (
-              <Mic className="h-6 w-6" />
-            )}
+            <div className={`transition-all duration-300 ${isListening ? "scale-90" : "scale-100"}`}>
+              {isListening ? (
+                <MicOff className="h-6 w-6" />
+              ) : (
+                <Mic className="h-6 w-6" />
+              )}
+            </div>
           </button>
 
-          <p className="mt-4 text-sm text-muted-foreground">
-            {isListening ? "Listening..." : "Click to speak"}
+          <p className={`mt-4 text-sm transition-all duration-300 ${
+            isListening ? "text-destructive" : "text-muted-foreground"
+          }`}>
+            {isListening
+              ? "Listening..."
+              : hasCurrentResponse && showResponse
+                ? "Click to re-record"
+                : "Click to speak"
+            }
           </p>
         </div>
 
