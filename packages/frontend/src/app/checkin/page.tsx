@@ -189,10 +189,10 @@ export default function CheckinPage() {
           <button
             onClick={simulateResponse}
             disabled={isListening}
-            className={`inline-flex h-16 w-16 items-center justify-center rounded-full transition-all duration-300 ${
+            className={`inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 shadow-sm ${
               isListening
-                ? "bg-destructive text-destructive-foreground"
-                : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
+                ? "bg-destructive text-destructive-foreground shadow-destructive/25"
+                : "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20"
             }`}
             style={{
               animation: isListening ? "gentlePulse 1.5s ease-in-out infinite" : undefined,
@@ -200,21 +200,21 @@ export default function CheckinPage() {
           >
             <div className={`transition-all duration-300 ${isListening ? "scale-90" : "scale-100"}`}>
               {isListening ? (
-                <MicOff className="h-6 w-6" />
+                <MicOff className="h-5 w-5" />
               ) : (
-                <Mic className="h-6 w-6" />
+                <Mic className="h-5 w-5" />
               )}
             </div>
           </button>
 
-          <p className={`mt-4 text-sm transition-all duration-300 ${
+          <p className={`mt-3 text-xs font-medium transition-all duration-300 ${
             isListening ? "text-destructive" : "text-muted-foreground"
           }`}>
             {isListening
               ? "Listening..."
               : hasCurrentResponse && showResponse
-                ? "Click to re-record"
-                : "Click to speak"
+                ? "Re-record"
+                : "Tap to speak"
             }
           </p>
         </div>
