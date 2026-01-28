@@ -27,22 +27,22 @@ export default function HomePage() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/checkin"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium font-mono text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
             >
-              <Mic className="h-5 w-5" />
+              <Mic className="h-4 w-4" />
               Voice Update
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3 w-3" />
             </Link>
             <Link
               href="/checkin/text"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-border bg-card px-8 py-4 text-base font-semibold text-foreground transition-colors hover:bg-muted sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-medium font-mono text-foreground transition-colors hover:bg-muted sm:w-auto"
             >
-              <PenLine className="h-5 w-5" />
+              <PenLine className="h-4 w-4" />
               Text Update
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
         </div>
