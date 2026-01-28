@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const { responses } = await request.json();
 
-    const apiKey = await getOpenAIApiKey();
+    const apiKey = getOpenAIApiKey();
     const openai = new OpenAI({ apiKey });
 
     const prompt = `You are an AI assistant helping create a weekly status update report. Based on the following responses from a team member, generate a clean, professional weekly update report.

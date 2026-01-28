@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
     }
 
-    const apiKey = await getOpenAIApiKey();
+    const apiKey = getOpenAIApiKey();
     const openai = new OpenAI({ apiKey });
 
     const transcription = await openai.audio.transcriptions.create({

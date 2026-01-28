@@ -6,8 +6,8 @@ export async function POST(request: NextRequest) {
   try {
     const { report } = await request.json();
 
-    const notionApiKey = await getNotionApiKey();
-    const databaseId = await getNotionDatabaseId();
+    const notionApiKey = getNotionApiKey();
+    const databaseId = getNotionDatabaseId();
 
     const notion = new Client({ auth: notionApiKey });
 
