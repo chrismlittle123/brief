@@ -46,9 +46,10 @@ export async function POST(request: NextRequest) {
           },
         },
         // Add Person property if user email is available
+        // @ts-expect-error - Notion SDK types are overly strict for people property
         ...(userEmail && {
           Person: {
-            people: [{ email: userEmail } as { email: string }],
+            people: [{ email: userEmail }],
           },
         }),
       },
