@@ -189,7 +189,7 @@ export default function CheckinPage() {
               </p>
 
               <p className="mt-2 text-xs text-muted-foreground/70">
-                Answer all 6 questions in one go. Take your time!
+                Answer all 4 questions in one go. Take your time!
               </p>
             </div>
           )}

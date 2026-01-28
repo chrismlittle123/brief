@@ -6,12 +6,10 @@ import { ArrowLeft, Check, Sparkles } from "lucide-react";
 import { CompletePage } from "../complete";
 
 const QUESTIONS = [
-  { id: "work_done", question: "What did you work on this week?", placeholder: "Describe your main accomplishments..." },
-  { id: "progress", question: "What's your progress percentage?", placeholder: "e.g., 75%" },
-  { id: "on_track", question: "Are you on track for your deadline?", placeholder: "Yes/No and any context..." },
-  { id: "blockers", question: "Any blockers or challenges?", placeholder: "What's slowing you down? (or 'None')" },
-  { id: "next_week", question: "What's planned for next week?", placeholder: "Your upcoming priorities..." },
-  { id: "other", question: "Anything else to flag?", placeholder: "Optional notes..." },
+  { id: "done", question: "What did you get done this week?", placeholder: "Describe your main accomplishments...", multiline: true },
+  { id: "challenges", question: "Any challenges? How did you handle them?", placeholder: "What slowed you down and how you resolved it (or 'None')", multiline: true },
+  { id: "next_week", question: "What's the plan for next week?", placeholder: "Your upcoming priorities...", multiline: true },
+  { id: "client_pulse", question: "How's the client/stakeholder feeling?", placeholder: "e.g., 'Happy with progress' or 'Concerned about timeline'", multiline: false },
 ];
 
 export default function TextCheckinPage() {
@@ -24,7 +22,7 @@ export default function TextCheckinPage() {
   };
 
   const filledCount = Object.values(responses).filter(v => v.trim()).length;
-  const canSubmit = responses.work_done?.trim() && responses.progress?.trim();
+  const canSubmit = responses.done?.trim();
 
   const handleSubmit = () => {
     if (!canSubmit) return;
@@ -89,7 +87,7 @@ export default function TextCheckinPage() {
                 <label className="font-medium text-foreground">{q.question}</label>
               </div>
 
-              {q.id === "work_done" || q.id === "next_week" ? (
+              {q.multiline ? (
                 <textarea
                   value={responses[q.id] || ""}
                   onChange={(e) => handleChange(q.id, e.target.value)}

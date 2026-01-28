@@ -104,7 +104,7 @@ export default function HomePage() {
           <FeatureCard
             icon={<Mic className="h-6 w-6" />}
             title="Voice-first"
-            description="Just talk. No typing, no forms. Answer 6 quick questions."
+            description="Just talk. No typing, no forms. Answer 4 quick questions."
           />
           <FeatureCard
             icon={<Clock className="h-6 w-6" />}
