@@ -46,7 +46,23 @@ Return ONLY valid JSON, no markdown or explanation.`;
       throw new Error("No response from OpenAI");
     }
 
-    const report = JSON.parse(content);
+    const rawReport = JSON.parse(content);
+
+    // Normalize field names in case AI uses different keys
+    const report = {
+      tldr: rawReport.tldr || rawReport.TLDR || rawReport.summary || "",
+      thisWeek: rawReport.thisWeek || rawReport.this_week || rawReport.accomplishments || rawReport.Accomplishments || rawReport.done || [],
+      challenges: rawReport.challenges || rawReport.Challenges || rawReport.blockers || [],
+      nextWeek: rawReport.nextWeek || rawReport.next_week || rawReport.NextWeek || rawReport.planned || [],
+      clientPulse: rawReport.clientPulse || rawReport.client_pulse || rawReport.ClientPulse || rawReport.stakeholder || "No concerns",
+      status: rawReport.status || rawReport.Status || "On Track",
+    };
+
+    // Ensure arrays are arrays
+    if (!Array.isArray(report.thisWeek)) report.thisWeek = [report.thisWeek].filter(Boolean);
+    if (!Array.isArray(report.challenges)) report.challenges = [report.challenges].filter(Boolean);
+    if (!Array.isArray(report.nextWeek)) report.nextWeek = [report.nextWeek].filter(Boolean);
+
     return NextResponse.json(report);
   } catch (error) {
     console.error("Report generation error:", error);
