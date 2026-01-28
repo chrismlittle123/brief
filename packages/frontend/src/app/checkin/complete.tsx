@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Sparkles, MessageCircle, ExternalLink, Pencil, AlertCircle } from "lucide-react";
+import { Check, Sparkles, MessageCircle, ExternalLink, Pencil, AlertCircle, X } from "lucide-react";
 
 // Mock data for projects that Brief AI detected
 const DETECTED_PROJECTS = [
@@ -235,22 +235,24 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
         {/* Saved Popup */}
         {showSavedPopup && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="rounded-2xl bg-card p-8 shadow-xl text-center animate-in fade-in zoom-in duration-200 max-w-sm mx-4">
+            <div className="relative rounded-2xl bg-card p-8 shadow-xl text-center animate-in fade-in zoom-in duration-200 max-w-sm mx-4">
+              {/* Close button */}
+              <button
+                onClick={() => setShowSavedPopup(false)}
+                className="absolute top-4 right-4 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
                 <Check className="h-8 w-8 text-success" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">Saved to Notion!</h3>
               <p className="text-muted-foreground">Your weekly update has been saved successfully.</p>
-              <div className="mt-6 flex flex-col gap-3">
+              <div className="mt-6">
                 <button className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
                   <ExternalLink className="h-4 w-4" />
                   View in Notion
-                </button>
-                <button
-                  onClick={() => setShowSavedPopup(false)}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Exit
                 </button>
               </div>
             </div>
