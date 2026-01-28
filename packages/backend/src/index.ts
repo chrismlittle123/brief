@@ -243,7 +243,7 @@ fastify.post("/save-to-notion", async (request, reply) => {
             name: report.status,
           },
         },
-        "Week of": {
+        "Week Of": {
           date: {
             start: weekOfDate,
           },
