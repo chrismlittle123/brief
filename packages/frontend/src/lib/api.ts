@@ -1,0 +1,45 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+export async function transcribeAudio(audioBlob: Blob): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", audioBlob, "recording.webm");
+
+  const response = await fetch(`${API_URL}/transcribe`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Transcription failed");
+  }
+
+  const data = await response.json();
+  return data.text;
+}
+
+export async function generateReport(
+  responses: Record<string, string>
+): Promise<{
+  summary: string;
+  thisWeek: string[];
+  blockers: string[];
+  nextWeek: string[];
+  progress: number;
+  status: string;
+}> {
+  const response = await fetch(`${API_URL}/generate-report`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ responses }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Report generation failed");
+  }
+
+  return response.json();
+}

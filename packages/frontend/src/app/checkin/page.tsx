@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ArrowLeft, Mic, MicOff, Check, ChevronRight } from "lucide-react";
 import { CompletePage } from "./complete";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import { transcribeAudio } from "@/lib/api";
 
 const QUESTIONS = [
   { id: "work_done", question: "What did you work on this week?", followUp: "Got it." },
@@ -14,71 +16,68 @@ const QUESTIONS = [
   { id: "other", question: "Anything else to flag?", followUp: null },
 ];
 
-// Mock responses for demo
-const MOCK_RESPONSES: Record<string, string> = {
-  work_done: "I worked on the authentication module this week. Got the OAuth flow working and connected it to our user database. Also did some code reviews and helped onboard the new developer.",
-  progress: "About 75%",
-  on_track: "Yeah, should be done by Friday assuming no surprises",
-  blockers: "Still waiting on API credentials from the vendor. I escalated it on Monday but haven't heard back yet.",
-  next_week: "Planning to finish integration testing, start on the documentation, and maybe begin the password reset flow if there's time",
-  other: "Nope, that's it!",
-};
-
 export default function CheckinPage() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [isListening, setIsListening] = useState(false);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [isComplete, setIsComplete] = useState(false);
   const [showResponse, setShowResponse] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
+
+  const { isRecording, startRecording, stopRecording, error: recorderError } = useAudioRecorder();
 
   const currentQuestion = QUESTIONS[currentStep];
   const progress = ((currentStep) / QUESTIONS.length) * 100;
   const hasCurrentResponse = responses[currentQuestion?.id];
 
-  // Handle spacebar to start/stop recording
+  const handleToggleRecording = useCallback(async () => {
+    setTranscriptionError(null);
+
+    if (isRecording) {
+      // Stop recording and transcribe
+      const audioBlob = await stopRecording();
+      if (audioBlob && audioBlob.size > 0) {
+        setIsTranscribing(true);
+        try {
+          const text = await transcribeAudio(audioBlob);
+          setResponses(prev => ({ ...prev, [currentQuestion.id]: text }));
+          setTimeout(() => {
+            setShowResponse(true);
+          }, 100);
+        } catch (err) {
+          setTranscriptionError(err instanceof Error ? err.message : "Transcription failed");
+        } finally {
+          setIsTranscribing(false);
+        }
+      }
+    } else {
+      // If there's already a response, fade it out first
+      if (hasCurrentResponse && showResponse) {
+        setIsExiting(true);
+        setTimeout(() => {
+          setShowResponse(false);
+          setIsExiting(false);
+          startRecording();
+        }, 500);
+      } else {
+        startRecording();
+      }
+    }
+  }, [isRecording, stopRecording, startRecording, currentQuestion?.id, hasCurrentResponse, showResponse]);
+
+  // Handle spacebar to toggle recording
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !e.repeat) {
+      if (e.code === "Space" && !e.repeat && !isTranscribing) {
         e.preventDefault();
-        simulateResponse();
+        handleToggleRecording();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [hasCurrentResponse, showResponse, isListening]);
-
-  const simulateResponse = () => {
-    // If there's already a response showing, fade it out and start new recording
-    if (hasCurrentResponse && showResponse) {
-      setIsExiting(true);
-      setTimeout(() => {
-        setShowResponse(false);
-        setIsExiting(false);
-        startListening();
-      }, 500);
-      return;
-    }
-
-    startListening();
-  };
-
-  const startListening = () => {
-    setIsListening(true);
-
-    // Simulate listening for 2 seconds
-    setTimeout(() => {
-      setIsListening(false);
-      const response = MOCK_RESPONSES[currentQuestion.id];
-      setResponses(prev => ({ ...prev, [currentQuestion.id]: response }));
-
-      // Gentle entrance of response
-      setTimeout(() => {
-        setShowResponse(true);
-      }, 100);
-    }, 2000);
-  };
+  }, [handleToggleRecording, isTranscribing]);
 
   const goToNextQuestion = () => {
     setIsExiting(true);
@@ -152,25 +151,34 @@ export default function CheckinPage() {
             {currentQuestion.question}
           </h2>
 
-          {/* Audio waveform visualization (mock) */}
+          {/* Audio waveform visualization */}
           <div className={`my-8 flex items-center justify-center gap-1.5 transition-opacity duration-300 ${
-            hasCurrentResponse && showResponse && !isListening ? "opacity-30" : "opacity-100"
+            hasCurrentResponse && showResponse && !isRecording ? "opacity-30" : "opacity-100"
           }`}>
             {[...Array(7)].map((_, i) => (
               <div
                 key={i}
                 className={`w-1.5 rounded-full transition-all duration-300 ease-out ${
-                  isListening ? "bg-primary" : "bg-muted"
+                  isRecording ? "bg-primary animate-pulse" : isTranscribing ? "bg-secondary" : "bg-muted"
                 }`}
                 style={{
-                  height: isListening
+                  height: isRecording
                     ? `${Math.sin((Date.now() / 200) + i) * 16 + 24}px`
+                    : isTranscribing
+                    ? "16px"
                     : "8px",
                   transitionDelay: `${i * 50}ms`,
                 }}
               />
             ))}
           </div>
+
+          {/* Error display */}
+          {(recorderError || transcriptionError) && (
+            <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              {recorderError || transcriptionError}
+            </div>
+          )}
 
           {/* Response display with beautiful entrance/exit */}
           {hasCurrentResponse && showResponse && (
@@ -200,20 +208,24 @@ export default function CheckinPage() {
 
           {/* Mic button */}
           <button
-            onClick={simulateResponse}
-            disabled={isListening}
+            onClick={handleToggleRecording}
+            disabled={isTranscribing}
             className={`inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 shadow-sm ${
-              isListening
+              isRecording
                 ? "bg-destructive text-destructive-foreground shadow-destructive/25"
+                : isTranscribing
+                ? "bg-secondary text-secondary-foreground"
                 : "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20"
             }`}
             style={{
-              animation: isListening ? "gentlePulse 1.5s ease-in-out infinite" : undefined,
+              animation: isRecording ? "gentlePulse 1.5s ease-in-out infinite" : undefined,
             }}
           >
-            <div className={`transition-all duration-300 ${isListening ? "scale-90" : "scale-100"}`}>
-              {isListening ? (
+            <div className={`transition-all duration-300 ${isRecording ? "scale-90" : "scale-100"}`}>
+              {isRecording ? (
                 <MicOff className="h-5 w-5" />
+              ) : isTranscribing ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-secondary-foreground border-t-transparent" />
               ) : (
                 <Mic className="h-5 w-5" />
               )}
@@ -221,10 +233,12 @@ export default function CheckinPage() {
           </button>
 
           <p className={`mt-3 text-xs font-medium transition-all duration-300 ${
-            isListening ? "text-destructive" : "text-muted-foreground"
+            isRecording ? "text-destructive" : isTranscribing ? "text-secondary" : "text-muted-foreground"
           }`}>
-            {isListening
-              ? "Listening..."
+            {isRecording
+              ? "Tap to stop"
+              : isTranscribing
+              ? "Transcribing..."
               : hasCurrentResponse && showResponse
                 ? "Re-record"
                 : "Tap to speak"
@@ -233,7 +247,7 @@ export default function CheckinPage() {
 
           {/* Keyboard hint */}
           <p className="mt-2 text-[10px] text-muted-foreground/60">
-            or press <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">space</kbd> to {isListening ? "stop" : "start"}
+            or press <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">space</kbd> to {isRecording ? "stop" : "start"}
           </p>
         </div>
 
@@ -262,4 +276,3 @@ export default function CheckinPage() {
     </main>
   );
 }
-

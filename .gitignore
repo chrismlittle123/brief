@@ -1,5 +1,42 @@
-.env
+# Dependencies
 node_modules/
-.next/
+.pnpm-store/
+
+# Build outputs
 dist/
+.next/
+out/
+build/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Pulumi
+.pulumi/
+
+# Testing
+coverage/
+
+# Vercel
+.vercel

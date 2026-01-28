@@ -1,37 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Check, Sparkles, MessageCircle, ExternalLink, Pencil, AlertCircle, X } from "lucide-react";
+import { Check, Sparkles, MessageCircle, ExternalLink, AlertCircle, X, Loader2 } from "lucide-react";
+import { generateReport } from "@/lib/api";
 
-// Mock data for projects that Brief AI detected
-const DETECTED_PROJECTS = [
-  { name: "Finchly UI Library", confidence: "high", color: "bg-primary" },
-  { name: "Brief App", confidence: "medium", color: "bg-secondary" },
-];
+interface Report {
+  summary: string;
+  thisWeek: string[];
+  blockers: string[];
+  nextWeek: string[];
+  progress: number;
+  status: string;
+}
 
-const MOCK_REPORT = {
-  weekOf: "January 27, 2026",
-  status: "On Track",
-  progress: 75,
-  summary: "Created three new components for the Finchly UI library following established patterns. Built Spinner, ProgressStepper, and AudioWaveform components using cva for variants and proper TypeScript conventions.",
-  thisWeek: [
-    { text: "Built Spinner component with size variants", project: "Finchly UI Library" },
-    { text: "Created ProgressStepper for multi-step flows", project: "Finchly UI Library" },
-    { text: "Implemented AudioWaveform voice visualizer", project: "Finchly UI Library" },
-    { text: "Added exports to feedback/index.ts", project: "Finchly UI Library" },
-  ],
-  blockers: [],
-  nextWeek: [
-    { text: "Integration testing for new components", project: "Finchly UI Library" },
-    { text: "Documentation and usage examples", project: "Finchly UI Library" },
-  ],
-};
+function getWeekOf(): string {
+  const now = new Date();
+  const options: Intl.DateTimeFormatOptions = { month: "long", day: "numeric", year: "numeric" };
+  return now.toLocaleDateString("en-US", options);
+}
 
 export function CompletePage({ responses }: { responses: Record<string, string> }) {
   const [showEditChat, setShowEditChat] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
+  const [report, setReport] = useState<Report | null>(null);
+  const [isGenerating, setIsGenerating] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function generate() {
+      try {
+        const generated = await generateReport(responses);
+        setReport(generated);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to generate report");
+      } finally {
+        setIsGenerating(false);
+      }
+    }
+    generate();
+  }, [responses]);
+
+  if (isGenerating) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">Generating your report...</h2>
+          <p className="text-muted-foreground">Brief AI is analyzing your responses</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (error || !report) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md mx-4">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">Something went wrong</h2>
+          <p className="text-muted-foreground mb-6">{error || "Failed to generate report"}</p>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground"
+          >
+            Back to Home
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background">
@@ -52,79 +91,70 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-2xl font-semibold text-foreground">Weekly Update</h2>
-              <p className="text-muted-foreground">Week of {MOCK_REPORT.weekOf}</p>
+              <p className="text-muted-foreground">Week of {getWeekOf()}</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="text-3xl font-bold text-primary">{MOCK_REPORT.progress}%</div>
+                <div className="text-3xl font-bold text-primary">{report.progress}%</div>
                 <div className="text-xs text-muted-foreground">Progress</div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center">
-                <Check className="h-6 w-6 text-success" />
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                report.status === "On Track" ? "bg-success/10" :
+                report.status === "At Risk" ? "bg-secondary/10" : "bg-destructive/10"
+              }`}>
+                <Check className={`h-6 w-6 ${
+                  report.status === "On Track" ? "text-success" :
+                  report.status === "At Risk" ? "text-secondary" : "text-destructive"
+                }`} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Detected Projects */}
+        {/* Status Badge */}
         <div className="mb-6">
-          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
-            Projects detected
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {DETECTED_PROJECTS.map((project) => (
-              <span
-                key={project.name}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${
-                  project.confidence === "high"
-                    ? "bg-primary/10 text-primary"
-                    : "bg-secondary/10 text-secondary"
-                }`}
-              >
-                <span className={`h-2 w-2 rounded-full ${project.color}`} />
-                {project.name}
-              </span>
-            ))}
-            <button className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-              <Pencil className="h-3 w-3" />
-              Edit projects
-            </button>
-          </div>
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${
+            report.status === "On Track" ? "bg-success/10 text-success" :
+            report.status === "At Risk" ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
+          }`}>
+            <span className={`h-2 w-2 rounded-full ${
+              report.status === "On Track" ? "bg-success" :
+              report.status === "At Risk" ? "bg-secondary" : "bg-destructive"
+            }`} />
+            {report.status}
+          </span>
         </div>
 
         {/* Summary Card */}
         <div className="rounded-xl border border-border bg-card p-5 mb-4">
           <h3 className="font-semibold text-foreground mb-2">Summary</h3>
-          <p className="text-muted-foreground leading-relaxed">{MOCK_REPORT.summary}</p>
+          <p className="text-muted-foreground leading-relaxed">{report.summary}</p>
         </div>
 
         {/* This Week */}
-        <div className="rounded-xl border border-border bg-card p-5 mb-4">
-          <h3 className="font-semibold text-foreground mb-3">This Week</h3>
-          <ul className="space-y-2.5">
-            {MOCK_REPORT.thisWeek.map((item, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <Check className="h-5 w-5 text-success shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <span className="text-foreground">{item.text}</span>
-                  <span className="ml-2 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {item.project}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {report.thisWeek.length > 0 && (
+          <div className="rounded-xl border border-border bg-card p-5 mb-4">
+            <h3 className="font-semibold text-foreground mb-3">This Week</h3>
+            <ul className="space-y-2.5">
+              {report.thisWeek.map((item, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-success shrink-0 mt-0.5" />
+                  <span className="text-foreground">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Blockers */}
-        {MOCK_REPORT.blockers.length > 0 ? (
+        {report.blockers.length > 0 ? (
           <div className="rounded-xl border border-border bg-card p-5 mb-4">
             <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-destructive" />
               Blockers
             </h3>
             <ul className="space-y-2">
-              {MOCK_REPORT.blockers.map((item, i) => (
+              {report.blockers.map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-muted-foreground">
                   <span className="text-destructive">•</span>
                   {item}
@@ -143,22 +173,19 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
         )}
 
         {/* Next Week */}
-        <div className="rounded-xl border border-border bg-card p-5 mb-6">
-          <h3 className="font-semibold text-foreground mb-3">Next Week</h3>
-          <ul className="space-y-2.5">
-            {MOCK_REPORT.nextWeek.map((item, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <div className="h-5 w-5 rounded-full border-2 border-muted shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <span className="text-muted-foreground">{item.text}</span>
-                  <span className="ml-2 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {item.project}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {report.nextWeek.length > 0 && (
+          <div className="rounded-xl border border-border bg-card p-5 mb-6">
+            <h3 className="font-semibold text-foreground mb-3">Next Week</h3>
+            <ul className="space-y-2.5">
+              {report.nextWeek.map((item, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <div className="h-5 w-5 rounded-full border-2 border-muted shrink-0 mt-0.5" />
+                  <span className="text-muted-foreground">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Edit with Brief AI */}
         {!showEditChat ? (
@@ -177,7 +204,7 @@ export function CompletePage({ responses }: { responses: Record<string, string> 
               <span className="font-medium text-foreground">Talk to Brief</span>
             </div>
             <textarea
-              placeholder="e.g., 'The Spinner component was actually for the Brief app, not Finchly' or 'Add that I also fixed a bug in the auth flow'"
+              placeholder="e.g., 'Add that I also fixed a bug in the auth flow' or 'Change the progress to 80%'"
               className="w-full rounded-lg border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[80px] resize-none"
             />
             <div className="flex justify-end gap-2 mt-3">

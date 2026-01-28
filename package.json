@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter frontend dev",
-    "build": "pnpm --filter frontend build",
+    "dev": "pnpm run --parallel dev:frontend dev:backend",
+    "dev:frontend": "pnpm --filter frontend dev",
     "dev:backend": "pnpm --filter backend dev",
-    "build:all": "pnpm -r build"
+    "build": "pnpm -r build"
   },
   "devDependencies": {
     "puppeteer": "^24.36.1",
