@@ -7,15 +7,11 @@ export const size = {
 export const contentType = "image/png";
 
 export default async function Icon() {
-  const sacramentoFont = await fetch(
-    new URL("https://fonts.gstatic.com/s/sacramento/v15/buEzpo6gcdjy0EiZMBUG4CMf_exL.woff2")
-  ).then((res) => res.arrayBuffer());
-
   return new ImageResponse(
     (
       <div
         style={{
-          fontSize: 28,
+          fontSize: 26,
           background: "black",
           width: "100%",
           height: "100%",
@@ -23,8 +19,9 @@ export default async function Icon() {
           alignItems: "center",
           justifyContent: "center",
           color: "white",
-          fontFamily: "Sacramento",
-          paddingTop: 4,
+          fontFamily: "cursive",
+          fontStyle: "italic",
+          paddingTop: 2,
         }}
       >
         B
@@ -32,13 +29,6 @@ export default async function Icon() {
     ),
     {
       ...size,
-      fonts: [
-        {
-          name: "Sacramento",
-          data: sacramentoFont,
-          style: "normal",
-        },
-      ],
     }
   );
 }
