@@ -20,12 +20,12 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
 }
 
 export interface Report {
-  summary: string;
+  tldr: string;
   thisWeek: string[];
-  blockers: string[];
+  challenges: string[];
   nextWeek: string[];
-  progress: number;
-  status: string;
+  clientPulse: string;
+  status: "On Track" | "At Risk" | "Blocked";
 }
 
 export async function generateReport(

@@ -9,25 +9,29 @@ export async function POST(request: NextRequest) {
     const apiKey = getOpenAIApiKey();
     const openai = new OpenAI({ apiKey });
 
-    const prompt = `You are an AI assistant helping create a weekly status update report. Based on the following responses from a team member, generate a clean, professional weekly update report.
+    const prompt = `You are an AI assistant helping create a concise weekly status update. Based on the following responses, generate a clean, professional report.
 
 Responses:
-- What did you work on this week? ${responses.work_done || "No response"}
-- Progress percentage: ${responses.progress || "No response"}
-- On track for deadline? ${responses.on_track || "No response"}
-- Blockers or challenges: ${responses.blockers || "No response"}
-- Plans for next week: ${responses.next_week || "No response"}
-- Anything else to flag: ${responses.other || "No response"}
+- What got done this week: ${responses.done || responses.work_done || responses.transcript || "No response"}
+- Challenges and how they were handled: ${responses.challenges || responses.blockers || "No response"}
+- Plan for next week: ${responses.next_week || "No response"}
+- Client/stakeholder pulse: ${responses.client_pulse || responses.other || "No response"}
 
 Generate a JSON response with the following structure:
 {
-  "summary": "A 2-3 sentence summary of the week",
-  "thisWeek": ["List of accomplishments"],
-  "blockers": ["List of blockers, empty if none"],
-  "nextWeek": ["List of planned items"],
-  "progress": number (0-100),
+  "tldr": "Two sentences max: what shipped + current status/any blockers",
+  "thisWeek": ["List of accomplishments, grouped by workstream if applicable"],
+  "challenges": ["List of challenges WITH context and resolution for each. Empty array if none."],
+  "nextWeek": ["List of priorities for next week"],
+  "clientPulse": "One sentence on stakeholder sentiment and any action taken. Use 'No concerns' if positive.",
   "status": "On Track" | "At Risk" | "Blocked"
 }
+
+Guidelines:
+- Keep it concise. No fluff.
+- For challenges, include what happened AND how it was handled (e.g., "Scope creep on feature X — added 3 days. Now using stricter change request process.")
+- If no challenges mentioned, use empty array
+- Status should reflect reality: "On Track" if things are going well, "At Risk" if there are unresolved challenges, "Blocked" if work is stopped
 
 Return ONLY valid JSON, no markdown or explanation.`;
 

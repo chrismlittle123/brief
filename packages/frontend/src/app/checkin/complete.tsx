@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Check, Sparkles, MessageCircle, ExternalLink, AlertCircle, X, Loader2 } from "lucide-react";
+import { Check, Sparkles, MessageCircle, ExternalLink, AlertCircle, X, Loader2, Users } from "lucide-react";
 import { generateReport, refineReport, saveToNotion, Report } from "@/lib/api";
 
 function getWeekOf(): string {
@@ -95,42 +95,23 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
               <h2 className="text-2xl font-semibold text-foreground">Weekly Update</h2>
               <p className="text-muted-foreground">Week of {getWeekOf()}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <div className="text-3xl font-bold text-primary">{report.progress}%</div>
-                <div className="text-xs text-muted-foreground">Progress</div>
-              </div>
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                report.status === "On Track" ? "bg-success/10" :
-                report.status === "At Risk" ? "bg-secondary/10" : "bg-destructive/10"
-              }`}>
-                <Check className={`h-6 w-6 ${
-                  report.status === "On Track" ? "text-success" :
-                  report.status === "At Risk" ? "text-secondary" : "text-destructive"
-                }`} />
-              </div>
-            </div>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${
+              report.status === "On Track" ? "bg-success/10 text-success" :
+              report.status === "At Risk" ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
+            }`}>
+              <span className={`h-2 w-2 rounded-full ${
+                report.status === "On Track" ? "bg-success" :
+                report.status === "At Risk" ? "bg-secondary" : "bg-destructive"
+              }`} />
+              {report.status}
+            </span>
           </div>
         </div>
 
-        {/* Status Badge */}
-        <div className="mb-6">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${
-            report.status === "On Track" ? "bg-success/10 text-success" :
-            report.status === "At Risk" ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
-          }`}>
-            <span className={`h-2 w-2 rounded-full ${
-              report.status === "On Track" ? "bg-success" :
-              report.status === "At Risk" ? "bg-secondary" : "bg-destructive"
-            }`} />
-            {report.status}
-          </span>
-        </div>
-
-        {/* Summary Card */}
-        <div className="rounded-xl border border-border bg-card p-5 mb-4">
-          <h3 className="font-semibold text-foreground mb-2">Summary</h3>
-          <p className="text-muted-foreground leading-relaxed">{report.summary}</p>
+        {/* TL;DR Card */}
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-4">
+          <h3 className="font-semibold text-foreground mb-2">TL;DR</h3>
+          <p className="text-foreground leading-relaxed">{report.tldr}</p>
         </div>
 
         {/* This Week */}
@@ -148,17 +129,17 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
           </div>
         )}
 
-        {/* Blockers */}
-        {report.blockers.length > 0 ? (
+        {/* Challenges */}
+        {report.challenges.length > 0 ? (
           <div className="rounded-xl border border-border bg-card p-5 mb-4">
             <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-destructive" />
-              Blockers
+              <AlertCircle className="h-4 w-4 text-secondary" />
+              Challenges
             </h3>
             <ul className="space-y-2">
-              {report.blockers.map((item, i) => (
+              {report.challenges.map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-muted-foreground">
-                  <span className="text-destructive">•</span>
+                  <span className="text-secondary">•</span>
                   {item}
                 </li>
               ))}
@@ -168,7 +149,7 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
           <div className="rounded-xl border border-border bg-success/5 p-5 mb-4">
             <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
               <Check className="h-4 w-4 text-success" />
-              No Blockers
+              No Challenges
             </h3>
             <p className="text-sm text-muted-foreground">Everything is moving smoothly</p>
           </div>
@@ -176,7 +157,7 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
 
         {/* Next Week */}
         {report.nextWeek.length > 0 && (
-          <div className="rounded-xl border border-border bg-card p-5 mb-6">
+          <div className="rounded-xl border border-border bg-card p-5 mb-4">
             <h3 className="font-semibold text-foreground mb-3">Next Week</h3>
             <ul className="space-y-2.5">
               {report.nextWeek.map((item, i) => (
@@ -188,6 +169,15 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
             </ul>
           </div>
         )}
+
+        {/* Client Pulse */}
+        <div className="rounded-xl border border-border bg-card p-5 mb-6">
+          <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            Client Pulse
+          </h3>
+          <p className="text-muted-foreground">{report.clientPulse}</p>
+        </div>
 
         {/* Edit with Brief AI */}
         {!showEditChat ? (

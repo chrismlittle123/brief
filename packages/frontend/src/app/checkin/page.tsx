@@ -8,12 +8,10 @@ import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { transcribeAudio, generateReport, Report } from "@/lib/api";
 
 const QUESTIONS = [
-  { id: "work_done", number: 1, question: "What did you work on this week?" },
-  { id: "progress", number: 2, question: "What's your progress percentage?" },
-  { id: "on_track", number: 3, question: "Are you on track for your deadline?" },
-  { id: "blockers", number: 4, question: "Any blockers or challenges?" },
-  { id: "next_week", number: 5, question: "What's planned for next week?" },
-  { id: "other", number: 6, question: "Anything else to flag?" },
+  { id: "done", number: 1, question: "What did you get done this week?" },
+  { id: "challenges", number: 2, question: "Any challenges? How did you handle them?" },
+  { id: "next_week", number: 3, question: "What's the plan for next week?" },
+  { id: "client_pulse", number: 4, question: "How's the client/stakeholder feeling?" },
 ];
 
 type ViewState = "recording" | "editing" | "generating" | "complete";

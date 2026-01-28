@@ -12,11 +12,11 @@ export async function POST(request: NextRequest) {
     const prompt = `You are an AI assistant helping refine a weekly status update report. The user wants to make changes to their report.
 
 Current Report:
-- Summary: ${currentReport.summary}
-- This Week: ${currentReport.thisWeek.join(", ")}
-- Blockers: ${currentReport.blockers.length > 0 ? currentReport.blockers.join(", ") : "None"}
-- Next Week: ${currentReport.nextWeek.join(", ")}
-- Progress: ${currentReport.progress}%
+- TL;DR: ${currentReport.tldr}
+- This Week: ${currentReport.thisWeek.join("; ")}
+- Challenges: ${currentReport.challenges.length > 0 ? currentReport.challenges.join("; ") : "None"}
+- Next Week: ${currentReport.nextWeek.join("; ")}
+- Client Pulse: ${currentReport.clientPulse}
 - Status: ${currentReport.status}
 
 User's instruction: "${instruction}"
@@ -25,11 +25,11 @@ Apply the user's requested changes and return the updated report. Keep everythin
 
 Return ONLY valid JSON with this structure:
 {
-  "summary": "Updated summary if needed",
-  "thisWeek": ["Updated list of accomplishments"],
-  "blockers": ["Updated list of blockers"],
-  "nextWeek": ["Updated list of planned items"],
-  "progress": number (0-100),
+  "tldr": "Two sentences max: what shipped + current status",
+  "thisWeek": ["List of accomplishments"],
+  "challenges": ["List of challenges with context and resolution"],
+  "nextWeek": ["List of priorities"],
+  "clientPulse": "One sentence on stakeholder sentiment",
   "status": "On Track" | "At Risk" | "Blocked"
 }`;
 
