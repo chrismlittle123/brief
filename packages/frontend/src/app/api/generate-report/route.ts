@@ -48,20 +48,35 @@ Return ONLY valid JSON, no markdown or explanation.`;
 
     const rawReport = JSON.parse(content);
 
+    // Helper to flatten any value to array of strings
+    function toStringArray(val: unknown): string[] {
+      if (!val) return [];
+      if (Array.isArray(val)) {
+        return val.flatMap(item => {
+          if (typeof item === 'string') return item;
+          if (typeof item === 'object' && item !== null) {
+            // If object, extract values or convert to string
+            return Object.values(item).map(v => String(v));
+          }
+          return String(item);
+        });
+      }
+      if (typeof val === 'object') {
+        // If object with nested arrays, flatten them
+        return Object.values(val).flatMap(v => toStringArray(v));
+      }
+      return [String(val)];
+    }
+
     // Normalize field names in case AI uses different keys
     const report = {
-      tldr: rawReport.tldr || rawReport.TLDR || rawReport.summary || "",
-      thisWeek: rawReport.thisWeek || rawReport.this_week || rawReport.accomplishments || rawReport.Accomplishments || rawReport.done || [],
-      challenges: rawReport.challenges || rawReport.Challenges || rawReport.blockers || [],
-      nextWeek: rawReport.nextWeek || rawReport.next_week || rawReport.NextWeek || rawReport.planned || [],
-      clientPulse: rawReport.clientPulse || rawReport.client_pulse || rawReport.ClientPulse || rawReport.stakeholder || "No concerns",
-      status: rawReport.status || rawReport.Status || "On Track",
+      tldr: String(rawReport.tldr || rawReport.TLDR || rawReport.summary || ""),
+      thisWeek: toStringArray(rawReport.thisWeek || rawReport.this_week || rawReport.accomplishments || rawReport.Accomplishments || rawReport.done),
+      challenges: toStringArray(rawReport.challenges || rawReport.Challenges || rawReport.blockers),
+      nextWeek: toStringArray(rawReport.nextWeek || rawReport.next_week || rawReport.NextWeek || rawReport.planned),
+      clientPulse: String(rawReport.clientPulse || rawReport.client_pulse || rawReport.ClientPulse || rawReport.stakeholder || "No concerns"),
+      status: String(rawReport.status || rawReport.Status || "On Track") as "On Track" | "At Risk" | "Blocked",
     };
-
-    // Ensure arrays are arrays
-    if (!Array.isArray(report.thisWeek)) report.thisWeek = [report.thisWeek].filter(Boolean);
-    if (!Array.isArray(report.challenges)) report.challenges = [report.challenges].filter(Boolean);
-    if (!Array.isArray(report.nextWeek)) report.nextWeek = [report.nextWeek].filter(Boolean);
 
     return NextResponse.json(report);
   } catch (error) {
