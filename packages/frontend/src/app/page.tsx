@@ -14,7 +14,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero */}
-      <section className="mx-auto max-w-4xl px-6 py-20">
+      <section className="mx-auto max-w-4xl px-6 py-12">
         <div className="text-center">
           <h2 className="text-5xl font-bold tracking-tight text-foreground md:text-6xl">
             Fill in the gaps.
