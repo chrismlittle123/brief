@@ -9,11 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@chrislittle/theme-finchly": "link:../../../ui/packages/themes/finchly",
-    "@chrislittle/ui-primitives": "link:../../../ui/packages/primitives",
+    "@google-cloud/secret-manager": "^6.1.1",
+    "@notionhq/client": "^2.3.0",
     "class-variance-authority": "^0.7.0",
     "lucide-react": "^0.469.0",
     "next": "16.1.6",
+    "openai": "^4.104.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },

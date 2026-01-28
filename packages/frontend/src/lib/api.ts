@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+// API calls go to Next.js API routes (same origin)
+const API_URL = "/api";
 
 export async function transcribeAudio(audioBlob: Blob): Promise<string> {
   const formData = new FormData();
@@ -18,16 +19,18 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
   return data.text;
 }
 
-export async function generateReport(
-  responses: Record<string, string>
-): Promise<{
+export interface Report {
   summary: string;
   thisWeek: string[];
   blockers: string[];
   nextWeek: string[];
   progress: number;
   status: string;
-}> {
+}
+
+export async function generateReport(
+  responses: Record<string, string>
+): Promise<Report> {
   const response = await fetch(`${API_URL}/generate-report`, {
     method: "POST",
     headers: {
@@ -42,15 +45,6 @@ export async function generateReport(
   }
 
   return response.json();
-}
-
-export interface Report {
-  summary: string;
-  thisWeek: string[];
-  blockers: string[];
-  nextWeek: string[];
-  progress: number;
-  status: string;
 }
 
 export async function refineReport(
