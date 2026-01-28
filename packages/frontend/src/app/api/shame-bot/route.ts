@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Client } from "@notionhq/client";
 import OpenAI from "openai";
 import { getNotionApiKey, getNotionDatabaseId, getOpenAIApiKey } from "@/lib/secrets";
 import { SHAME_PROMPT, TEAM_MEMBERS, getEscalationLevel, EscalationLevel } from "@/lib/shame-prompt";
@@ -13,31 +12,42 @@ function getCurrentWeekMonday(): string {
   return monday.toISOString().split("T")[0];
 }
 
-// Query Notion for this week's submissions
+// Query Notion for this week's submissions using fetch API
 async function getSubmittedEmails(): Promise<string[]> {
-  const notion = new Client({ auth: getNotionApiKey() });
+  const notionApiKey = getNotionApiKey();
   const databaseId = getNotionDatabaseId();
   const weekOf = getCurrentWeekMonday();
 
-  const response = await notion.databases.query({
-    database_id: databaseId,
-    filter: {
-      property: "Week Of",
-      date: {
-        equals: weekOf,
-      },
+  const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${notionApiKey}`,
+      "Notion-Version": "2022-06-28",
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      filter: {
+        property: "Week Of",
+        date: {
+          equals: weekOf,
+        },
+      },
+    }),
   });
 
+  if (!response.ok) {
+    throw new Error(`Notion API error: ${response.status}`);
+  }
+
+  const data = await response.json();
   const emails: string[] = [];
-  for (const page of response.results) {
-    if ("properties" in page) {
-      const personProp = page.properties.Person;
-      if (personProp && "people" in personProp) {
-        for (const person of personProp.people) {
-          if ("email" in person && person.email) {
-            emails.push(person.email.toLowerCase());
-          }
+
+  for (const page of data.results) {
+    const personProp = page.properties?.Person;
+    if (personProp?.people) {
+      for (const person of personProp.people) {
+        if (person.person?.email) {
+          emails.push(person.person.email.toLowerCase());
         }
       }
     }
