@@ -5,7 +5,7 @@ const EVENT_DESCRIPTION =
   "Time to fill in your weekly Brief update.\n\nOpen Brief: https://brief.palindrom.ai/checkin";
 const TIMEZONE = "Europe/London";
 const SLOT_DURATION_MINUTES = 15;
-const WINDOW_START_HOUR = 9;
+const WINDOW_START_HOUR = 8;
 const WINDOW_END_HOUR = 12;
 
 export interface CalendarResult {
@@ -32,16 +32,16 @@ export async function getGoogleAccessToken(
 }
 
 /**
- * Get the next Friday from the given date.
- * If today is Friday, returns the *following* Friday.
+ * Get the upcoming Friday from the given date.
+ * If today is Friday, returns today (so the cron running Friday morning
+ * schedules for the same day). Otherwise returns the next Friday.
  */
 export function getNextFriday(from: Date = new Date()): Date {
   const day = from.getDay(); // 0=Sun … 5=Fri 6=Sat
   const daysUntilFriday = day <= 5 ? 5 - day : 6; // days until next Friday
-  // If today is already Friday, push to next week
-  const offset = daysUntilFriday === 0 ? 7 : daysUntilFriday;
+  if (daysUntilFriday === 0) return from; // today is Friday
   const friday = new Date(from);
-  friday.setDate(from.getDate() + offset);
+  friday.setDate(from.getDate() + daysUntilFriday);
   return friday;
 }
 
