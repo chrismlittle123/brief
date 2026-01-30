@@ -6,6 +6,7 @@ import { ArrowLeft, Mic, MicOff, Sparkles } from "lucide-react";
 import { CompletePage } from "./complete";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { transcribeAudio, generateReport, Report } from "@/lib/api";
+import { BriefLogo } from "@/components/brief-logo";
 
 const QUESTIONS = [
   { id: "done", number: 1, question: "What did you get done this week?" },
@@ -107,7 +108,7 @@ export default function CheckinPage() {
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm">Exit</span>
             </Link>
-            <span className="text-sm text-muted-foreground">Voice Update</span>
+            <BriefLogo className="h-12 w-auto" />
           </div>
         </div>
       </header>
