@@ -5,8 +5,9 @@ const EVENT_DESCRIPTION =
   "Time to fill in your weekly Brief update.\n\nOpen Brief: https://brief.palindrom.ai/checkin";
 const TIMEZONE = "Europe/London";
 const SLOT_DURATION_MINUTES = 15;
-const WINDOW_START_HOUR = 8;
-const WINDOW_END_HOUR = 12;
+const DEFAULT_HOUR_NO_MEETINGS = 12;
+const DAY_START_HOUR = 0;
+const DAY_END_HOUR = 23;
 
 export interface CalendarResult {
   scheduled: boolean;
@@ -99,14 +100,15 @@ interface BusyInterval {
 }
 
 /**
- * Query Google Calendar FreeBusy for a given window on fridayDate.
+ * Find the slot 15 minutes after the user's last meeting on fridayDate.
+ * If the user has no meetings, defaults to 12:00 (midday).
  */
-export async function findFreeSlot(
+export async function findSlotAfterLastMeeting(
   accessToken: string,
   fridayDate: Date
 ): Promise<{ start: string; end: string } | null> {
-  const windowStart = toRFC3339(fridayDate, WINDOW_START_HOUR, 0);
-  const windowEnd = toRFC3339(fridayDate, WINDOW_END_HOUR, 0);
+  const dayStart = toRFC3339(fridayDate, DAY_START_HOUR, 0);
+  const dayEnd = toRFC3339(fridayDate, DAY_END_HOUR, 59);
 
   const freeBusyResponse = await fetch(
     "https://www.googleapis.com/calendar/v3/freeBusy",
@@ -117,8 +119,8 @@ export async function findFreeSlot(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        timeMin: windowStart,
-        timeMax: windowEnd,
+        timeMin: dayStart,
+        timeMax: dayEnd,
         timeZone: TIMEZONE,
         items: [{ id: "primary" }],
       }),
@@ -138,40 +140,50 @@ export async function findFreeSlot(
   const busyIntervals: BusyInterval[] =
     freeBusyData.calendars?.primary?.busy ?? [];
 
-  // Walk 15-minute slots from 09:00 to 11:45 (last possible 15-min slot ending at 12:00)
-  const totalSlots =
-    ((WINDOW_END_HOUR - WINDOW_START_HOUR) * 60) / SLOT_DURATION_MINUTES;
+  let slotStartHour: number;
+  let slotStartMin: number;
 
-  for (let i = 0; i < totalSlots; i++) {
-    const slotStartMinutes = WINDOW_START_HOUR * 60 + i * SLOT_DURATION_MINUTES;
-    const slotEndMinutes = slotStartMinutes + SLOT_DURATION_MINUTES;
+  if (busyIntervals.length === 0) {
+    // No meetings — default to midday
+    slotStartHour = DEFAULT_HOUR_NO_MEETINGS;
+    slotStartMin = 0;
+  } else {
+    // Find the latest meeting end time
+    const latestEnd = busyIntervals.reduce((latest, interval) => {
+      const end = new Date(interval.end).getTime();
+      return end > latest ? end : latest;
+    }, 0);
 
-    const slotStartHour = Math.floor(slotStartMinutes / 60);
-    const slotStartMin = slotStartMinutes % 60;
-    const slotEndHour = Math.floor(slotEndMinutes / 60);
-    const slotEndMin = slotEndMinutes % 60;
+    // Schedule 15 minutes after the last meeting ends
+    const slotStart = new Date(latestEnd + SLOT_DURATION_MINUTES * 60 * 1000);
 
-    const slotStart = toLondonDatetime(fridayDate, slotStartHour, slotStartMin);
-    const slotEnd = toLondonDatetime(fridayDate, slotEndHour, slotEndMin);
+    // Convert UTC timestamp back to London wall-clock time
+    const londonParts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: TIMEZONE,
+      hour: "numeric",
+      minute: "numeric",
+      hour12: false,
+    }).formatToParts(slotStart);
 
-    // Check if slot overlaps any busy interval
-    // Convert slot London wall-clock times to UTC for comparison with FreeBusy UTC times
-    const slotStartUTC = toRFC3339(fridayDate, slotStartHour, slotStartMin);
-    const slotEndUTC = toRFC3339(fridayDate, slotEndHour, slotEndMin);
-    const overlaps = busyIntervals.some((busy) => {
-      const busyStart = new Date(busy.start).getTime();
-      const busyEnd = new Date(busy.end).getTime();
-      const sStart = new Date(slotStartUTC).getTime();
-      const sEnd = new Date(slotEndUTC).getTime();
-      return busyStart < sEnd && busyEnd > sStart;
-    });
-
-    if (!overlaps) {
-      return { start: slotStart, end: slotEnd };
-    }
+    slotStartHour = parseInt(
+      londonParts.find((p) => p.type === "hour")!.value,
+      10
+    );
+    slotStartMin = parseInt(
+      londonParts.find((p) => p.type === "minute")!.value,
+      10
+    );
   }
 
-  return null;
+  const slotEndMinutes =
+    slotStartHour * 60 + slotStartMin + SLOT_DURATION_MINUTES;
+  const slotEndHour = Math.floor(slotEndMinutes / 60);
+  const slotEndMin = slotEndMinutes % 60;
+
+  const start = toLondonDatetime(fridayDate, slotStartHour, slotStartMin);
+  const end = toLondonDatetime(fridayDate, slotEndHour, slotEndMin);
+
+  return { start, end };
 }
 
 /**
@@ -299,10 +311,10 @@ export async function scheduleReminder(
     };
   }
 
-  // Find a free slot
-  const slot = await findFreeSlot(accessToken, fridayDate);
+  // Find slot after last meeting of the day
+  const slot = await findSlotAfterLastMeeting(accessToken, fridayDate);
   if (!slot) {
-    return { scheduled: false, reason: "no_free_slot" };
+    return { scheduled: false, reason: "calendar_query_failed" };
   }
 
   // Create the event

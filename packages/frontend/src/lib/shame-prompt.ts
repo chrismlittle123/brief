@@ -31,8 +31,7 @@ FILM/TV REFERENCE BANK (use these or similar):
 - A Few Good Men: "You can't handle the update! ...Actually you can, it takes 5 minutes"
 
 ESCALATION LEVELS:
-- GENTLE (Friday 4pm): Friendly reminder, light humor
-- MEDIUM (Sunday 6pm): Slightly more urgent, theatrical disappointment
+- GENTLE (Friday 6pm): Friendly reminder, light humor
 - FULL_ROAST (Monday 8am): Maximum drama, all caps allowed, guilt-tripping encouraged
 
 FORMAT YOUR RESPONSE AS:
@@ -57,14 +56,12 @@ export const TEAM_MEMBERS = [
   { email: "christopher.lovejoy@palindrom.ai", name: "Christopher", slackId: null },
 ];
 
-export type EscalationLevel = "GENTLE" | "MEDIUM" | "FULL_ROAST";
+export type EscalationLevel = "GENTLE" | "FULL_ROAST";
 
 export function getEscalationLevel(): EscalationLevel {
   const now = new Date();
   const day = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-  const hour = now.getHours();
 
-  if (day === 1 && hour >= 7) return "FULL_ROAST"; // Monday morning
-  if (day === 0) return "MEDIUM"; // Sunday
-  return "GENTLE"; // Friday/Saturday
+  if (day === 1) return "FULL_ROAST"; // Monday morning
+  return "GENTLE"; // Friday evening
 }

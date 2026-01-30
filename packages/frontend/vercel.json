@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/shame-bot",
-      "schedule": "0 16 * * 5"
+      "schedule": "0 18 * * 5"
     },
     {
       "path": "/api/shame-bot",
@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/calendar-reminders",
-      "schedule": "0 6 * * 5"
+      "schedule": "0 8 * * 5"
     }
   ]
 }
