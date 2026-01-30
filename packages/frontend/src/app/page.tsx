@@ -19,9 +19,9 @@ export default function HomePage() {
           <Image
             src="/brief-logo.png"
             alt="Brief"
-            width={120}
-            height={48}
-            className="dark:invert"
+            width={912}
+            height={468}
+            className="h-16 w-auto dark:invert"
             priority
           />
           {isLoaded && (
