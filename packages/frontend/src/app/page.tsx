@@ -46,7 +46,7 @@ export default function HomePage() {
           <h2 className="text-5xl font-bold tracking-tight text-foreground md:text-6xl">
             Fill in the gaps.
           </h2>
-          <p className="mt-2 font-cursive text-6xl text-primary md:text-7xl">
+          <p className="mt-16 font-cursive text-6xl text-primary md:text-7xl">
             Keep it brief.
           </p>
           <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
