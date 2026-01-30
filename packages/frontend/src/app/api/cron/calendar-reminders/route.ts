@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { scheduleReminder, CalendarResult } from "@/lib/calendar";
 
@@ -7,13 +7,7 @@ import { scheduleReminder, CalendarResult } from "@/lib/calendar";
  * Iterates all Clerk users and schedules a "Brief - Weekly Update"
  * calendar event for each user who has a Google OAuth token.
  */
-export async function GET(request: NextRequest) {
-  // Verify this is a legitimate Vercel cron invocation
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function GET() {
   try {
     const client = await clerkClient();
     const usersResponse = await client.users.getUserList({ limit: 100 });
