@@ -21,7 +21,7 @@ export default function HomePage() {
             alt="Brief"
             width={912}
             height={468}
-            className="h-16 w-auto dark:invert"
+            className="h-16 w-auto"
             priority
           />
           {isLoaded && (
