@@ -6,6 +6,7 @@ const isProtectedRoute = createRouteMatcher([
   "/api/refine-report(.*)",
   "/api/save-to-notion(.*)",
   "/api/transcribe(.*)",
+  "/api/calendar(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
