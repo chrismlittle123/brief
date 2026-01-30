@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { currentUser } from "@clerk/nextjs/server";
 import { getNotionApiKey, getNotionDatabaseId } from "@/lib/secrets";
 
 export async function POST(request: NextRequest) {
   try {
     const { report } = await request.json();
 
-    // Get user email from cookie
-    const cookieStore = await cookies();
-    const userEmail = cookieStore.get("brief_user_email")?.value;
+    // Get user email from Clerk
+    const user = await currentUser();
+    const userEmail = user?.emailAddresses[0]?.emailAddress;
 
     const notionApiKey = getNotionApiKey();
     const databaseId = getNotionDatabaseId();
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     // Add Person property if user email is available
     if (userEmail) {
       properties.Person = {
-        people: [{ email: userEmail }],
+        email: userEmail,
       };
     }
 

@@ -1,37 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Mic, Clock, FileText, ArrowRight, PenLine, LogOut } from "lucide-react";
+import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
+import { Mic, Clock, FileText, ArrowRight, PenLine } from "lucide-react";
 
 export default function HomePage() {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          const data = await res.json();
-          setUserEmail(data.email);
-        }
-      } catch {
-        // Not authenticated
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    checkAuth();
-  }, []);
-
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    setUserEmail(null);
-    router.refresh();
-  };
+  const { isLoaded, isSignedIn } = useUser();
 
   return (
     <main className="min-h-screen bg-background">
@@ -39,26 +13,16 @@ export default function HomePage() {
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between">
           <h1 className="font-cursive text-5xl text-foreground">Brief</h1>
-          {!isLoading && (
+          {isLoaded && (
             <div className="flex items-center gap-4">
-              {userEmail ? (
-                <>
-                  <span className="text-sm text-muted-foreground">{userEmail}</span>
-                  <button
-                    onClick={handleLogout}
-                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </button>
-                </>
+              {isSignedIn ? (
+                <UserButton />
               ) : (
-                <Link
-                  href="/login"
-                  className="text-sm text-primary hover:text-primary/80 transition-colors"
-                >
-                  Sign in
-                </Link>
+                <SignInButton mode="redirect">
+                  <button className="text-sm text-primary hover:text-primary/80 transition-colors">
+                    Sign in
+                  </button>
+                </SignInButton>
               )}
             </div>
           )}
@@ -142,4 +106,3 @@ function FeatureCard({
     </div>
   );
 }
-
