@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
-import { Mic, Clock, FileText, ArrowRight, PenLine, Calendar, Check, X, Loader2 } from "lucide-react";
+import { Mic, ArrowRight, PenLine, Calendar, Check, X, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 export default function HomePage() {
@@ -66,24 +66,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Features */}
-        <div className="mt-16 grid gap-6 md:grid-cols-3">
-          <FeatureCard
-            icon={<Mic className="h-6 w-6" />}
-            title="Voice-first"
-            description="Just talk. No typing, no forms. Answer 4 quick questions."
-          />
-          <FeatureCard
-            icon={<Clock className="h-6 w-6" />}
-            title="5 minutes"
-            description="Complete your weekly update in the time it takes to grab coffee."
-          />
-          <FeatureCard
-            icon={<FileText className="h-6 w-6" />}
-            title="Auto-generated report"
-            description="AI writes a clean summary and saves it directly to Notion."
-          />
-        </div>
 
         {/* Test Calendar */}
         {isSignedIn && (
@@ -158,22 +140,3 @@ export default function HomePage() {
   );
 }
 
-function FeatureCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        {icon}
-      </div>
-      <h4 className="mt-4 font-semibold text-foreground">{title}</h4>
-      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
-    </div>
-  );
-}

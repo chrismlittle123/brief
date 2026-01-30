@@ -250,7 +250,10 @@ export async function createReminderEvent(
           timeZone: TIMEZONE,
         },
         reminders: {
-          useDefault: true,
+          useDefault: false,
+          overrides: [
+            { method: "popup", minutes: 0 },
+          ],
         },
       }),
     }
