@@ -14,16 +14,22 @@ export async function POST(request: NextRequest) {
 Responses:
 - What got done this week: ${responses.done || responses.work_done || responses.transcript || "No response"}
 - Challenges and how they were handled: ${responses.challenges || responses.blockers || "No response"}
+- Current status / what they're working on: ${responses.current_status || "No response"}
 - Plan for next week: ${responses.next_week || "No response"}
-- Client/stakeholder pulse: ${responses.client_pulse || responses.other || "No response"}
+- Dependencies / blockers: ${responses.dependencies || "No response"}
+- Support required: ${responses.support || "No response"}
+- Vibe check (personal and client): ${responses.vibe || responses.client_pulse || responses.other || "No response"}
 
 Generate a JSON response with the following structure:
 {
   "tldr": "Two sentences max: what shipped + current status/any blockers",
   "thisWeek": ["List of accomplishments, grouped by workstream if applicable"],
   "challenges": ["List of challenges WITH context and resolution for each. Empty array if none."],
+  "currentStatus": "Brief summary of what's in progress and how far along",
   "nextWeek": ["List of priorities for next week"],
-  "clientPulse": "One sentence on stakeholder sentiment and any action taken. Use 'No concerns' if positive.",
+  "dependencies": "Any blockers or things being waited on. Use 'None' if nothing.",
+  "supportRequired": "Any help needed from the team. Use 'None' if nothing.",
+  "vibe": "One sentence on how the person and client/stakeholder are feeling.",
   "status": "On Track" | "At Risk" | "Blocked"
 }
 
@@ -32,6 +38,7 @@ Guidelines:
 - For challenges, include what happened AND how it was handled (e.g., "Scope creep on feature X — added 3 days. Now using stricter change request process.")
 - If no challenges mentioned, use empty array
 - Status should reflect reality: "On Track" if things are going well, "At Risk" if there are unresolved challenges, "Blocked" if work is stopped
+- If dependencies or support are "None" or not mentioned, just use "None"
 
 Return ONLY valid JSON, no markdown or explanation.`;
 
@@ -73,8 +80,11 @@ Return ONLY valid JSON, no markdown or explanation.`;
       tldr: String(rawReport.tldr || rawReport.TLDR || rawReport.summary || ""),
       thisWeek: toStringArray(rawReport.thisWeek || rawReport.this_week || rawReport.accomplishments || rawReport.Accomplishments || rawReport.done),
       challenges: toStringArray(rawReport.challenges || rawReport.Challenges || rawReport.blockers),
+      currentStatus: String(rawReport.currentStatus || rawReport.current_status || rawReport.CurrentStatus || ""),
       nextWeek: toStringArray(rawReport.nextWeek || rawReport.next_week || rawReport.NextWeek || rawReport.planned),
-      clientPulse: String(rawReport.clientPulse || rawReport.client_pulse || rawReport.ClientPulse || rawReport.stakeholder || "No concerns"),
+      dependencies: String(rawReport.dependencies || rawReport.Dependencies || "None"),
+      supportRequired: String(rawReport.supportRequired || rawReport.support_required || rawReport.SupportRequired || "None"),
+      vibe: String(rawReport.vibe || rawReport.Vibe || rawReport.clientPulse || rawReport.client_pulse || "No concerns"),
       status: String(rawReport.status || rawReport.Status || "On Track") as "On Track" | "At Risk" | "Blocked",
     };
 

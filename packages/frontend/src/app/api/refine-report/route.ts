@@ -15,8 +15,11 @@ Current Report:
 - TL;DR: ${currentReport.tldr}
 - This Week: ${currentReport.thisWeek.join("; ")}
 - Challenges: ${currentReport.challenges.length > 0 ? currentReport.challenges.join("; ") : "None"}
+- Current Status: ${currentReport.currentStatus}
 - Next Week: ${currentReport.nextWeek.join("; ")}
-- Client Pulse: ${currentReport.clientPulse}
+- Dependencies: ${currentReport.dependencies}
+- Support Required: ${currentReport.supportRequired}
+- Vibe: ${currentReport.vibe}
 - Status: ${currentReport.status}
 
 User's instruction: "${instruction}"
@@ -28,8 +31,11 @@ Return ONLY valid JSON with this structure:
   "tldr": "Two sentences max: what shipped + current status",
   "thisWeek": ["List of accomplishments"],
   "challenges": ["List of challenges with context and resolution"],
+  "currentStatus": "Brief summary of what's in progress and how far along",
   "nextWeek": ["List of priorities"],
-  "clientPulse": "One sentence on stakeholder sentiment",
+  "dependencies": "Any blockers or things being waited on",
+  "supportRequired": "Any help needed from the team",
+  "vibe": "One sentence on personal and client sentiment",
   "status": "On Track" | "At Risk" | "Blocked"
 }`;
 

@@ -10,8 +10,11 @@ import { transcribeAudio, generateReport, Report } from "@/lib/api";
 const QUESTIONS = [
   { id: "done", number: 1, question: "What did you get done this week?" },
   { id: "challenges", number: 2, question: "Any challenges? How did you handle them?" },
-  { id: "next_week", number: 3, question: "What's the plan for next week?" },
-  { id: "client_pulse", number: 4, question: "How's the client/stakeholder feeling?" },
+  { id: "current_status", number: 3, question: "What are you currently working on and how far along are you?" },
+  { id: "next_week", number: 4, question: "What's the plan for next week?" },
+  { id: "dependencies", number: 5, question: "Are you blocked on or waiting for anything?" },
+  { id: "support", number: 6, question: "Do you need any help or support from the team?" },
+  { id: "vibe", number: 7, question: "How's the vibe? How are you and the client feeling?" },
 ];
 
 type ViewState = "recording" | "editing" | "generating" | "complete";
@@ -189,7 +192,7 @@ export default function CheckinPage() {
               </p>
 
               <p className="mt-2 text-xs text-muted-foreground/70">
-                Answer all 4 questions in one go. Take your time!
+                Answer all 7 questions in one go. Take your time!
               </p>
             </div>
           )}

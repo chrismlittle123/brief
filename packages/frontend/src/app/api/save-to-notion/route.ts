@@ -85,19 +85,64 @@ export async function POST(request: NextRequest) {
           rich_text: [{ type: "text", text: { content: item } }],
         },
       })),
-      // Client Pulse section
+      // Current Status section
       {
         object: "block",
         type: "heading_2",
         heading_2: {
-          rich_text: [{ type: "text", text: { content: "Client Pulse" } }],
+          rich_text: [{ type: "text", text: { content: "Current Status" } }],
         },
       },
       {
         object: "block",
         type: "paragraph",
         paragraph: {
-          rich_text: [{ type: "text", text: { content: report.clientPulse || "No concerns" } }],
+          rich_text: [{ type: "text", text: { content: report.currentStatus || "No update" } }],
+        },
+      },
+      // Dependencies section
+      {
+        object: "block",
+        type: "heading_2",
+        heading_2: {
+          rich_text: [{ type: "text", text: { content: "Dependencies" } }],
+        },
+      },
+      {
+        object: "block",
+        type: "paragraph",
+        paragraph: {
+          rich_text: [{ type: "text", text: { content: report.dependencies || "None" } }],
+        },
+      },
+      // Support Required section
+      {
+        object: "block",
+        type: "heading_2",
+        heading_2: {
+          rich_text: [{ type: "text", text: { content: "Support Required" } }],
+        },
+      },
+      {
+        object: "block",
+        type: "paragraph",
+        paragraph: {
+          rich_text: [{ type: "text", text: { content: report.supportRequired || "None" } }],
+        },
+      },
+      // Vibe Check section
+      {
+        object: "block",
+        type: "heading_2",
+        heading_2: {
+          rich_text: [{ type: "text", text: { content: "Vibe Check" } }],
+        },
+      },
+      {
+        object: "block",
+        type: "paragraph",
+        paragraph: {
+          rich_text: [{ type: "text", text: { content: report.vibe || "No concerns" } }],
         },
       },
     ];

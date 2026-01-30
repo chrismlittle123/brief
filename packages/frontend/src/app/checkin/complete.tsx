@@ -170,13 +170,37 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
           </div>
         )}
 
-        {/* Client Pulse */}
+        {/* Current Status */}
+        {report.currentStatus && (
+          <div className="rounded-xl border border-border bg-card p-5 mb-4">
+            <h3 className="font-semibold text-foreground mb-2">Current Status</h3>
+            <p className="text-muted-foreground">{report.currentStatus}</p>
+          </div>
+        )}
+
+        {/* Dependencies */}
+        {report.dependencies && report.dependencies !== "None" && (
+          <div className="rounded-xl border border-border bg-card p-5 mb-4">
+            <h3 className="font-semibold text-foreground mb-2">Dependencies</h3>
+            <p className="text-muted-foreground">{report.dependencies}</p>
+          </div>
+        )}
+
+        {/* Support Required */}
+        {report.supportRequired && report.supportRequired !== "None" && (
+          <div className="rounded-xl border border-border bg-card p-5 mb-4">
+            <h3 className="font-semibold text-foreground mb-2">Support Required</h3>
+            <p className="text-muted-foreground">{report.supportRequired}</p>
+          </div>
+        )}
+
+        {/* Vibe Check */}
         <div className="rounded-xl border border-border bg-card p-5 mb-6">
           <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
             <Users className="h-4 w-4 text-primary" />
-            Client Pulse
+            Vibe Check
           </h3>
-          <p className="text-muted-foreground">{report.clientPulse}</p>
+          <p className="text-muted-foreground">{report.vibe}</p>
         </div>
 
         {/* Edit with Brief AI */}

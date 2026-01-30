@@ -23,8 +23,11 @@ export interface Report {
   tldr: string;
   thisWeek: string[];
   challenges: string[];
+  currentStatus: string;
   nextWeek: string[];
-  clientPulse: string;
+  dependencies: string;
+  supportRequired: string;
+  vibe: string;
   status: "On Track" | "At Risk" | "Blocked";
 }
 

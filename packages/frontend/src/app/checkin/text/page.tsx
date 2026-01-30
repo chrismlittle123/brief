@@ -8,8 +8,11 @@ import { CompletePage } from "../complete";
 const QUESTIONS = [
   { id: "done", question: "What did you get done this week?", placeholder: "Describe your main accomplishments...", multiline: true },
   { id: "challenges", question: "Any challenges? How did you handle them?", placeholder: "What slowed you down and how you resolved it (or 'None')", multiline: true },
+  { id: "current_status", question: "What are you currently working on and how far along are you?", placeholder: "e.g., 'Finishing the API integration, about 80% done'", multiline: true },
   { id: "next_week", question: "What's the plan for next week?", placeholder: "Your upcoming priorities...", multiline: true },
-  { id: "client_pulse", question: "How's the client/stakeholder feeling?", placeholder: "e.g., 'Happy with progress' or 'Concerned about timeline'", multiline: false },
+  { id: "dependencies", question: "Are you blocked on or waiting for anything?", placeholder: "e.g., 'Waiting on API keys from client' or 'None'", multiline: false },
+  { id: "support", question: "Do you need any help or support from the team?", placeholder: "e.g., 'Need a code review on the auth PR' or 'None'", multiline: false },
+  { id: "vibe", question: "How's the vibe? How are you and the client feeling?", placeholder: "e.g., 'All good, client is happy with progress'", multiline: false },
 ];
 
 export default function TextCheckinPage() {
