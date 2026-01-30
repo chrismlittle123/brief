@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 import { Mic, ArrowRight, PenLine, Calendar, Check, X, Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -35,10 +36,18 @@ export default function HomePage() {
       {/* Hero */}
       <section className="mx-auto max-w-4xl px-6 py-12">
         <div className="text-center">
-          <h2 className="text-5xl font-bold tracking-tight text-foreground md:text-6xl">
+          <Image
+            src="/brief-logo.png"
+            alt="Brief"
+            width={320}
+            height={160}
+            className="mx-auto dark:invert"
+            priority
+          />
+          <h2 className="mt-6 text-5xl font-bold tracking-tight text-foreground md:text-6xl">
             Fill in the gaps.
           </h2>
-          <p className="mt-6 font-cursive text-6xl text-primary md:text-7xl">
+          <p className="mt-2 font-cursive text-6xl text-primary md:text-7xl">
             Keep it brief.
           </p>
           <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
