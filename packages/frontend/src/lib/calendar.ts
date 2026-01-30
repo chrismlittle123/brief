@@ -46,19 +46,51 @@ export function getNextFriday(from: Date = new Date()): Date {
 }
 
 /**
- * Build a date string in Europe/London for a given date and hour/minute.
- * Returns an ISO-like string with the correct offset for Europe/London.
+ * Build a datetime string for a given date and hour/minute in Europe/London.
+ * For Google Calendar event creation (paired with timeZone), returns bare datetime.
+ * For query APIs (FreeBusy, Events list), use toRFC3339() instead.
  */
-function toLondonISO(date: Date, hours: number, minutes: number): string {
-  // Build a date-time string that represents the wall-clock in London
+function toLondonDatetime(date: Date, hours: number, minutes: number): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   const h = String(hours).padStart(2, "0");
   const m = String(minutes).padStart(2, "0");
-  // We use the IANA timezone directly with Google Calendar API,
-  // so just return a plain datetime string (no offset).
   return `${year}-${month}-${day}T${h}:${m}:00`;
+}
+
+/**
+ * Build an RFC3339 timestamp for Google Calendar query APIs.
+ * Interprets the given hours/minutes as Europe/London wall-clock time
+ * and converts to UTC. In GMT (winter) the offset is +00:00; in BST (summer) it's +01:00.
+ * We use Intl to determine the correct offset.
+ */
+function toRFC3339(date: Date, hours: number, minutes: number): string {
+  // Create a Date object representing the London wall-clock time
+  // by building an ISO string and parsing with the timezone offset
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const h = String(hours).padStart(2, "0");
+  const m = String(minutes).padStart(2, "0");
+
+  // Determine London's UTC offset for this date
+  const probe = new Date(`${year}-${month}-${day}T12:00:00Z`);
+  const londonTime = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIMEZONE,
+    hour: "numeric",
+    timeZoneName: "shortOffset",
+  }).formatToParts(probe);
+  const offsetPart = londonTime.find((p) => p.type === "timeZoneName");
+  // offsetPart.value is like "GMT" or "GMT+1"
+  const offsetMatch = offsetPart?.value?.match(/GMT([+-]\d+)?/);
+  const offsetHours = offsetMatch?.[1] ? parseInt(offsetMatch[1], 10) : 0;
+
+  // Convert London wall-clock to UTC
+  const utcDate = new Date(
+    Date.UTC(year, date.getMonth(), date.getDate(), hours - offsetHours, minutes)
+  );
+  return utcDate.toISOString();
 }
 
 interface BusyInterval {
@@ -73,8 +105,8 @@ export async function findFreeSlot(
   accessToken: string,
   fridayDate: Date
 ): Promise<{ start: string; end: string } | null> {
-  const windowStart = toLondonISO(fridayDate, WINDOW_START_HOUR, 0);
-  const windowEnd = toLondonISO(fridayDate, WINDOW_END_HOUR, 0);
+  const windowStart = toRFC3339(fridayDate, WINDOW_START_HOUR, 0);
+  const windowEnd = toRFC3339(fridayDate, WINDOW_END_HOUR, 0);
 
   const freeBusyResponse = await fetch(
     "https://www.googleapis.com/calendar/v3/freeBusy",
@@ -119,19 +151,18 @@ export async function findFreeSlot(
     const slotEndHour = Math.floor(slotEndMinutes / 60);
     const slotEndMin = slotEndMinutes % 60;
 
-    const slotStart = toLondonISO(fridayDate, slotStartHour, slotStartMin);
-    const slotEnd = toLondonISO(fridayDate, slotEndHour, slotEndMin);
+    const slotStart = toLondonDatetime(fridayDate, slotStartHour, slotStartMin);
+    const slotEnd = toLondonDatetime(fridayDate, slotEndHour, slotEndMin);
 
     // Check if slot overlaps any busy interval
+    // Convert slot London wall-clock times to UTC for comparison with FreeBusy UTC times
+    const slotStartUTC = toRFC3339(fridayDate, slotStartHour, slotStartMin);
+    const slotEndUTC = toRFC3339(fridayDate, slotEndHour, slotEndMin);
     const overlaps = busyIntervals.some((busy) => {
       const busyStart = new Date(busy.start).getTime();
       const busyEnd = new Date(busy.end).getTime();
-      // Build slot times in London TZ for comparison
-      const sStart = new Date(`${slotStart}+00:00`).getTime(); // approximate — we compare in the same TZ context
-      const sEnd = new Date(`${slotEnd}+00:00`).getTime();
-      // FreeBusy returns UTC times, so we need proper comparison.
-      // Since we sent timeZone: Europe/London, the API returns UTC equivalents.
-      // Our slot times are London wall-clock. Convert them for comparison.
+      const sStart = new Date(slotStartUTC).getTime();
+      const sEnd = new Date(slotEndUTC).getTime();
       return busyStart < sEnd && busyEnd > sStart;
     });
 
@@ -150,14 +181,14 @@ export async function hasExistingReminder(
   accessToken: string,
   fridayDate: Date
 ): Promise<{ exists: boolean; eventId?: string; startTime?: string }> {
-  const dayStart = toLondonISO(fridayDate, 0, 0);
-  const dayEnd = toLondonISO(fridayDate, 23, 59);
+  const dayStart = toRFC3339(fridayDate, 0, 0);
+  const dayEnd = toRFC3339(fridayDate, 23, 59);
 
   const response = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
       new URLSearchParams({
-        timeMin: `${dayStart}:00Z`,
-        timeMax: `${dayEnd}:59Z`,
+        timeMin: dayStart,
+        timeMax: dayEnd,
         timeZone: TIMEZONE,
         singleEvents: "true",
         q: EVENT_TITLE,
