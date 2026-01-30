@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { getNotionApiKey, getNotionDatabaseId } from "@/lib/secrets";
-import { scheduleReminder, CalendarResult } from "@/lib/calendar";
 
 export async function POST(request: NextRequest) {
   try {
@@ -155,22 +154,10 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
-    // Fire-and-forget: schedule calendar reminder
-    let calendar: CalendarResult = { scheduled: false, reason: "skipped" };
-    try {
-      const { userId } = await auth();
-      if (userId) {
-        calendar = await scheduleReminder(userId);
-      }
-    } catch (calendarError) {
-      console.error("Calendar scheduling failed (non-blocking):", calendarError);
-    }
-
     return NextResponse.json({
       success: true,
       pageId: data.id,
       url: `https://notion.so/${data.id.replace(/-/g, "")}`,
-      calendar,
     });
   } catch (error) {
     console.error("Notion save error:", error);

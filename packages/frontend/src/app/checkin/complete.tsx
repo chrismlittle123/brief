@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Check, Sparkles, MessageCircle, ExternalLink, AlertCircle, X, Loader2, Users, Calendar } from "lucide-react";
-import { generateReport, refineReport, saveToNotion, Report, CalendarInfo } from "@/lib/api";
+import { Check, Sparkles, MessageCircle, ExternalLink, AlertCircle, X, Loader2, Users } from "lucide-react";
+import { generateReport, refineReport, saveToNotion, Report } from "@/lib/api";
 
 function getWeekOf(): string {
   const now = new Date();
@@ -26,7 +26,6 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
   const [editInstruction, setEditInstruction] = useState("");
   const [isRefining, setIsRefining] = useState(false);
   const [notionUrl, setNotionUrl] = useState<string | null>(null);
-  const [calendarInfo, setCalendarInfo] = useState<CalendarInfo | null>(null);
 
   useEffect(() => {
     // Skip generation if we already have an initial report
@@ -257,9 +256,6 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
               try {
                 const result = await saveToNotion(report);
                 setNotionUrl(result.url);
-                if (result.calendar) {
-                  setCalendarInfo(result.calendar);
-                }
                 setShowSavedPopup(true);
               } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to save to Notion");
@@ -311,17 +307,6 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">Saved to Notion!</h3>
               <p className="text-muted-foreground">Your weekly update has been saved successfully.</p>
-              {calendarInfo?.scheduled && calendarInfo.startTime && (
-                <p className="text-sm text-muted-foreground mt-2 flex items-center justify-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" />
-                  Friday reminder added to your calendar at{" "}
-                  {new Date(calendarInfo.startTime).toLocaleTimeString("en-GB", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    timeZone: "Europe/London",
-                  })}
-                </p>
-              )}
               <div className="mt-6">
                 <a
                   href={notionUrl || "#"}

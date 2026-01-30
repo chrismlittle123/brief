@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
-import { Mic, Clock, FileText, ArrowRight, PenLine } from "lucide-react";
+import { Mic, Clock, FileText, ArrowRight, PenLine, Calendar } from "lucide-react";
+import { useState } from "react";
 
 export default function HomePage() {
   const { isLoaded, isSignedIn } = useUser();
+  const [calendarResult, setCalendarResult] = useState<string | null>(null);
+  const [isScheduling, setIsScheduling] = useState(false);
 
   return (
     <main className="min-h-screen bg-background">
@@ -62,6 +65,37 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
+
+        {/* Test Calendar Button */}
+          {isSignedIn && (
+            <div className="mt-6">
+              <button
+                onClick={async () => {
+                  setIsScheduling(true);
+                  setCalendarResult(null);
+                  try {
+                    const res = await fetch("/api/calendar/schedule-reminder", { method: "POST" });
+                    const data = await res.json();
+                    setCalendarResult(JSON.stringify(data, null, 2));
+                  } catch (err) {
+                    setCalendarResult(err instanceof Error ? err.message : "Failed");
+                  } finally {
+                    setIsScheduling(false);
+                  }
+                }}
+                disabled={isScheduling}
+                className="inline-flex items-center gap-2 rounded-full border border-dashed border-border px-4 py-2 text-xs font-mono text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+              >
+                <Calendar className="h-3 w-3" />
+                {isScheduling ? "Scheduling..." : "Test Calendar Event Creation"}
+              </button>
+              {calendarResult && (
+                <pre className="mt-3 rounded-lg bg-muted p-3 text-xs text-muted-foreground text-left max-w-md mx-auto overflow-auto">
+                  {calendarResult}
+                </pre>
+              )}
+            </div>
+          )}
 
         {/* Features */}
         <div className="mt-16 grid gap-6 md:grid-cols-3">

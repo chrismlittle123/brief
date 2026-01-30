@@ -67,16 +67,9 @@ export async function refineReport(
   return response.json();
 }
 
-export interface CalendarInfo {
-  scheduled: boolean;
-  eventId?: string;
-  startTime?: string;
-  reason?: string;
-}
-
 export async function saveToNotion(
   report: Report
-): Promise<{ success: boolean; pageId: string; url: string; calendar?: CalendarInfo }> {
+): Promise<{ success: boolean; pageId: string; url: string }> {
   const response = await fetch(`${API_URL}/save-to-notion`, {
     method: "POST",
     headers: {
