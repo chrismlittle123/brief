@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Check, Sparkles, MessageCircle, ExternalLink, AlertCircle, X, Loader2, Users } from "lucide-react";
 import { generateReport, refineReport, saveToNotion, Report } from "@/lib/api";
+import { BriefLogo } from "@/components/brief-logo";
 
 function getWeekOf(): string {
   const now = new Date();
@@ -79,7 +80,7 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-2xl px-6 py-4 flex items-center justify-between">
-          <h1 className="font-cursive text-5xl text-foreground">Brief</h1>
+          <BriefLogo className="h-12 w-auto" />
           <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary flex items-center gap-1.5">
             <Sparkles className="h-3 w-3" />
             AI Generated

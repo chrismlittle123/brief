@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Sparkles } from "lucide-react";
+import { BriefLogo } from "@/components/brief-logo";
 import { CompletePage } from "../complete";
 
 const QUESTIONS = [
@@ -53,7 +54,7 @@ export default function TextCheckinPage() {
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm">Exit</span>
             </Link>
-            <h1 className="font-cursive text-5xl text-foreground">Brief</h1>
+            <BriefLogo className="h-12 w-auto" />
           </div>
         </div>
       </header>

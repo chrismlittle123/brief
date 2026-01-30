@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
+import { BriefLogo } from "@/components/brief-logo";
 import { Mic, ArrowRight, PenLine, Calendar, Check, X, Loader2 } from "lucide-react";
 import { useState } from "react";
 
@@ -16,14 +16,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between">
-          <Image
-            src="/brief-logo.png"
-            alt="Brief"
-            width={912}
-            height={468}
-            className="h-16 w-auto"
-            priority
-          />
+          <BriefLogo />
           {isLoaded && (
             <div className="flex items-center gap-4">
               {isSignedIn ? (
