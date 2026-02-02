@@ -168,6 +168,11 @@ export async function POST(request: NextRequest) {
           start: weekOfDate,
         },
       },
+      "Submitted At": {
+        date: {
+          start: now.toISOString(),
+        },
+      },
     };
 
     // Add Person property if user email is available

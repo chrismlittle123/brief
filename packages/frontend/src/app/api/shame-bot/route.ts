@@ -18,6 +18,7 @@ async function getSubmittedEmails(): Promise<string[]> {
   const databaseId = getNotionDatabaseId();
   const weekOf = getCurrentWeekMonday();
 
+  // Query for submissions since this week's Monday
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
     method: "POST",
     headers: {
@@ -27,9 +28,9 @@ async function getSubmittedEmails(): Promise<string[]> {
     },
     body: JSON.stringify({
       filter: {
-        property: "Week Of",
+        property: "Submitted At",
         date: {
-          equals: weekOf,
+          on_or_after: weekOf,
         },
       },
     }),
@@ -44,6 +45,12 @@ async function getSubmittedEmails(): Promise<string[]> {
 
   for (const page of data.results) {
     const personProp = page.properties?.Person;
+
+    // Handle Email-type property (written by save-to-notion)
+    if (personProp?.email) {
+      emails.push(personProp.email.toLowerCase());
+    }
+    // Handle People-type property (fallback)
     if (personProp?.people) {
       for (const person of personProp.people) {
         if (person.person?.email) {
@@ -56,6 +63,20 @@ async function getSubmittedEmails(): Promise<string[]> {
   return emails;
 }
 
+const REFERENCE_THEMES = [
+  "Game of Thrones", "Terminator", "The Matrix", "Jaws", "Star Wars",
+  "The Office", "Breaking Bad", "Lord of the Rings", "Pulp Fiction",
+  "The Godfather", "Top Gun", "Forrest Gump", "The Shining",
+  "Apollo 13", "Jerry Maguire", "A Few Good Men", "Anchorman",
+  "Airplane", "Dirty Harry", "Taxi Driver", "Apocalypse Now",
+  "James Bond", "Harry Potter", "Field of Dreams", "The Sixth Sense",
+  "Scarface", "The Graduate", "Taken", "The Dark Knight",
+  "Jurassic Park", "Mean Girls", "Ghostbusters", "Braveheart",
+  "Rocky", "The Wizard of Oz", "22 Jump Street", "Snakes on a Plane", "Whiplash",
+  "Meet the Parents", "Captain Phillips", "Borat", "Shrek", "Fight Club",
+  "Superbad", "Step Brothers", "The Big Lebowski",
+];
+
 // Generate shame message using AI
 async function generateShameMessage(
   delinquents: { name: string; email: string }[],
@@ -63,14 +84,19 @@ async function generateShameMessage(
 ): Promise<string> {
   const openai = new OpenAI({ apiKey: getOpenAIApiKey() });
 
-  const names = delinquents.map((d) => d.name).join(", ");
-  const mentions = delinquents.map((d) => `@${d.name}`).join(" ");
+  const delinquentList = delinquents.map((d) => `• ${d.name} (${d.email})`).join("\n");
 
-  const prompt = `${SHAME_PROMPT}
+  // Pick a random theme suggestion to nudge variety
+  const suggestedTheme = REFERENCE_THEMES[Math.floor(Math.random() * REFERENCE_THEMES.length)];
+  const themeHint = `Suggested theme for this message: "${suggestedTheme}" (use this one or pick another, just don't repeat recent ones).`;
+
+  const filledPrompt = SHAME_PROMPT.replace("{THEME_SUGGESTION}", themeHint);
+
+  const prompt = `${filledPrompt}
 
 CURRENT ESCALATION LEVEL: ${level}
-DELINQUENT TEAM MEMBERS: ${names}
-FORMAT MENTIONS AS: ${mentions}
+DELINQUENT TEAM MEMBERS:
+${delinquentList}
 
 Generate the shame message now:`;
 
