@@ -24,11 +24,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Audit root standards
+        run: npx @standards-kit/conform audit
+
       - name: Check root standards
         run: npx @standards-kit/conform check
 
+      - name: Audit frontend standards
+        run: npx @standards-kit/conform audit --config packages/frontend/standards.toml
+
       - name: Check frontend standards
         run: npx @standards-kit/conform check --config packages/frontend/standards.toml
+
+      - name: Audit infra standards
+        run: npx @standards-kit/conform audit --config infra/standards.toml
 
       - name: Check infra standards
         run: npx @standards-kit/conform check --config infra/standards.toml
