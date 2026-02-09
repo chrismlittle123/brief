@@ -4,7 +4,15 @@ import { getOpenAIApiKey } from "@/lib/secrets";
 
 export async function POST(request: NextRequest) {
   try {
-    const { responses } = await request.json();
+    const body = await request.json();
+    const responses = body?.responses;
+
+    if (!responses || typeof responses !== "object") {
+      return NextResponse.json(
+        { error: "Invalid request", message: "Missing or invalid 'responses' object" },
+        { status: 400 }
+      );
+    }
 
     const apiKey = getOpenAIApiKey();
     const openai = new OpenAI({ apiKey });

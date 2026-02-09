@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 import { BriefLogo } from "@/components/brief-logo";
-import { Mic, ArrowRight, PenLine, Calendar, Check, X, Loader2 } from "lucide-react";
+import { Mic, ArrowRight, Calendar, Check, X, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 export default function HomePage() {
@@ -46,22 +46,14 @@ export default function HomePage() {
             Share your update in minutes. AI writes a clean report and saves it to Notion — so you can get back to work.
           </p>
 
-          {/* CTA Buttons */}
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          {/* CTA Button */}
+          <div className="mt-10 flex justify-center">
             <Link
               href="/checkin"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium font-mono text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium font-mono text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <Mic className="h-4 w-4" />
               Voice Update
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-            <Link
-              href="/checkin/text"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-medium font-mono text-foreground transition-colors hover:bg-muted sm:w-auto"
-            >
-              <PenLine className="h-4 w-4" />
-              Text Update
               <ArrowRight className="h-3 w-3" />
             </Link>
           </div>

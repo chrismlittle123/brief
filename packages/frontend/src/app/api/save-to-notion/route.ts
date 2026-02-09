@@ -4,7 +4,22 @@ import { getNotionApiKey, getNotionDatabaseId } from "@/lib/secrets";
 
 export async function POST(request: NextRequest) {
   try {
-    const { report } = await request.json();
+    const body = await request.json();
+    const report = body?.report;
+
+    if (!report || typeof report !== "object") {
+      return NextResponse.json(
+        { error: "Invalid request", message: "Missing or invalid 'report' object" },
+        { status: 400 }
+      );
+    }
+
+    if (!report.tldr || !Array.isArray(report.thisWeek) || !Array.isArray(report.nextWeek)) {
+      return NextResponse.json(
+        { error: "Invalid request", message: "Report must include 'tldr', 'thisWeek', and 'nextWeek'" },
+        { status: 400 }
+      );
+    }
 
     // Get user email from Clerk
     const user = await currentUser();
