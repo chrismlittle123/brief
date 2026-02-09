@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 import { BriefLogo } from "@/components/brief-logo";
-import { Mic, ArrowRight, Calendar, Check, X, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { Mic, ArrowRight } from "lucide-react";
+import { CalendarTest } from "./calendar-test";
 
 export default function HomePage() {
   const { isLoaded, isSignedIn } = useUser();
-  const [calendarStatus, setCalendarStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [calendarMessage, setCalendarMessage] = useState<string | null>(null);
 
   return (
     <main className="min-h-screen bg-background">
@@ -59,77 +57,8 @@ export default function HomePage() {
           </div>
         </div>
 
-
-        {/* Test Calendar */}
-        {isSignedIn && (
-          <div className="mt-12 mx-auto max-w-sm">
-            <div className="rounded-xl border border-border bg-card p-6 text-center">
-              <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                <Calendar className="h-5 w-5 text-primary" />
-              </div>
-              <h4 className="font-semibold text-foreground text-sm">Test Calendar Reminder</h4>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Schedule a Friday reminder event on your Google Calendar
-              </p>
-              <button
-                onClick={async () => {
-                  setCalendarStatus("loading");
-                  setCalendarMessage(null);
-                  try {
-                    const res = await fetch("/api/calendar/schedule-reminder", { method: "POST" });
-                    const data = await res.json();
-                    if (data.scheduled) {
-                      const time = data.startTime
-                        ? new Date(data.startTime).toLocaleTimeString("en-GB", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            timeZone: "Europe/London",
-                          })
-                        : "";
-                      setCalendarMessage(time ? `Reminder scheduled for Friday at ${time}` : "Reminder already scheduled");
-                      setCalendarStatus("success");
-                    } else {
-                      setCalendarMessage(data.reason === "no_free_slot" ? "No free slot found between 08:00–12:00" : data.reason || "Could not schedule");
-                      setCalendarStatus("error");
-                    }
-                  } catch {
-                    setCalendarMessage("Failed to reach the server");
-                    setCalendarStatus("error");
-                  }
-                }}
-                disabled={calendarStatus === "loading"}
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-5 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
-              >
-                {calendarStatus === "loading" ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Scheduling...
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="h-4 w-4" />
-                    Test Calendar Event Creation
-                  </>
-                )}
-              </button>
-              {calendarStatus === "success" && calendarMessage && (
-                <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-success/10 px-4 py-2.5">
-                  <Check className="h-4 w-4 text-success shrink-0" />
-                  <span className="text-sm text-success">{calendarMessage}</span>
-                </div>
-              )}
-              {calendarStatus === "error" && calendarMessage && (
-                <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-destructive/10 px-4 py-2.5">
-                  <X className="h-4 w-4 text-destructive shrink-0" />
-                  <span className="text-sm text-destructive">{calendarMessage}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {isSignedIn && <CalendarTest />}
       </section>
-
     </main>
   );
 }
-

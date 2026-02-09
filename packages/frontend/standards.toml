@@ -7,6 +7,7 @@
 
 [code.linting.eslint]
 enabled = true
+files = ["src/**/*.ts", "src/**/*.tsx"]
 ignore = ["**/dist/**", "**/node_modules/**", "**/build/**"]
 max-warnings = 0
 

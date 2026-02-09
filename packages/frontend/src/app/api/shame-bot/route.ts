@@ -131,7 +131,7 @@ export async function GET() {
   try {
     // 1. Get submitted emails from Notion
     const submittedEmails = await getSubmittedEmails();
-    console.log("Submitted emails:", submittedEmails);
+    console.warn("Submitted emails:", submittedEmails);
 
     // 2. Find delinquents
     const delinquents = TEAM_MEMBERS.filter(

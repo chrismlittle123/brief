@@ -33,7 +33,7 @@ export async function GET() {
     const scheduled = results.filter((r) => r.calendar.scheduled).length;
     const skipped = results.length - scheduled;
 
-    console.log(
+    console.warn(
       `[cron/calendar-reminders] Processed ${results.length} users: ${scheduled} scheduled, ${skipped} skipped`
     );
 

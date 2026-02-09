@@ -163,14 +163,10 @@ async function findSlotAfterLastMeeting(
       hour12: false,
     }).formatToParts(slotStart);
 
-    slotStartHour = parseInt(
-      londonParts.find((p) => p.type === "hour")!.value,
-      10
-    );
-    slotStartMin = parseInt(
-      londonParts.find((p) => p.type === "minute")!.value,
-      10
-    );
+    const hourPart = londonParts.find((p) => p.type === "hour");
+    const minutePart = londonParts.find((p) => p.type === "minute");
+    slotStartHour = parseInt(hourPart?.value ?? "0", 10);
+    slotStartMin = parseInt(minutePart?.value ?? "0", 10);
   }
 
   const slotEndMinutes =

@@ -2,22 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getOpenAIApiKey } from "@/lib/secrets";
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const responses = body?.responses;
-
-    if (!responses || typeof responses !== "object") {
-      return NextResponse.json(
-        { error: "Invalid request", message: "Missing or invalid 'responses' object" },
-        { status: 400 }
-      );
-    }
-
-    const apiKey = getOpenAIApiKey();
-    const openai = new OpenAI({ apiKey });
-
-    const prompt = `You are an AI assistant helping create a concise weekly status update. Based on the following responses, generate a clean, professional report.
+function buildPrompt(responses: Record<string, string>): string {
+  return `You are an AI assistant helping create a concise weekly status update. Based on the following responses, generate a clean, professional report.
 
 Responses:
 - What got done this week: ${responses.done || responses.work_done || responses.transcript || "No response"}
@@ -49,10 +35,70 @@ Guidelines:
 - If dependencies or support are "None" or not mentioned, just use "None"
 
 Return ONLY valid JSON, no markdown or explanation.`;
+}
+
+function toStringArray(val: unknown): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) {
+    return val.flatMap(item => {
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object' && item !== null) {
+        return Object.values(item).map(v => String(v));
+      }
+      return String(item);
+    });
+  }
+  if (typeof val === 'object') {
+    return Object.values(val as Record<string, unknown>).flatMap(v => toStringArray(v));
+  }
+  return [String(val)];
+}
+
+function pickString(raw: Record<string, unknown>, keys: string[], fallback: string): string {
+  for (const key of keys) {
+    if (raw[key]) return String(raw[key]);
+  }
+  return fallback;
+}
+
+function pickArray(raw: Record<string, unknown>, keys: string[]): string[] {
+  for (const key of keys) {
+    if (raw[key]) return toStringArray(raw[key]);
+  }
+  return [];
+}
+
+function normalizeReport(raw: Record<string, unknown>) {
+  return {
+    tldr: pickString(raw, ["tldr", "TLDR", "summary"], ""),
+    thisWeek: pickArray(raw, ["thisWeek", "this_week", "accomplishments", "Accomplishments", "done"]),
+    challenges: pickArray(raw, ["challenges", "Challenges", "blockers"]),
+    currentStatus: pickString(raw, ["currentStatus", "current_status", "CurrentStatus"], ""),
+    nextWeek: pickArray(raw, ["nextWeek", "next_week", "NextWeek", "planned"]),
+    dependencies: pickString(raw, ["dependencies", "Dependencies"], "None"),
+    supportRequired: pickString(raw, ["supportRequired", "support_required", "SupportRequired"], "None"),
+    vibe: pickString(raw, ["vibe", "Vibe", "clientPulse", "client_pulse"], "No concerns"),
+    status: pickString(raw, ["status", "Status"], "On Track") as "On Track" | "At Risk" | "Blocked",
+  };
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const responses = body?.responses;
+
+    if (!responses || typeof responses !== "object") {
+      return NextResponse.json(
+        { error: "Invalid request", message: "Missing or invalid 'responses' object" },
+        { status: 400 }
+      );
+    }
+
+    const openai = new OpenAI({ apiKey: getOpenAIApiKey() });
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "user", content: buildPrompt(responses) }],
       response_format: { type: "json_object" },
     });
 
@@ -61,42 +107,7 @@ Return ONLY valid JSON, no markdown or explanation.`;
       throw new Error("No response from OpenAI");
     }
 
-    const rawReport = JSON.parse(content);
-
-    // Helper to flatten any value to array of strings
-    function toStringArray(val: unknown): string[] {
-      if (!val) return [];
-      if (Array.isArray(val)) {
-        return val.flatMap(item => {
-          if (typeof item === 'string') return item;
-          if (typeof item === 'object' && item !== null) {
-            // If object, extract values or convert to string
-            return Object.values(item).map(v => String(v));
-          }
-          return String(item);
-        });
-      }
-      if (typeof val === 'object') {
-        // If object with nested arrays, flatten them
-        return Object.values(val).flatMap(v => toStringArray(v));
-      }
-      return [String(val)];
-    }
-
-    // Normalize field names in case AI uses different keys
-    const report = {
-      tldr: String(rawReport.tldr || rawReport.TLDR || rawReport.summary || ""),
-      thisWeek: toStringArray(rawReport.thisWeek || rawReport.this_week || rawReport.accomplishments || rawReport.Accomplishments || rawReport.done),
-      challenges: toStringArray(rawReport.challenges || rawReport.Challenges || rawReport.blockers),
-      currentStatus: String(rawReport.currentStatus || rawReport.current_status || rawReport.CurrentStatus || ""),
-      nextWeek: toStringArray(rawReport.nextWeek || rawReport.next_week || rawReport.NextWeek || rawReport.planned),
-      dependencies: String(rawReport.dependencies || rawReport.Dependencies || "None"),
-      supportRequired: String(rawReport.supportRequired || rawReport.support_required || rawReport.SupportRequired || "None"),
-      vibe: String(rawReport.vibe || rawReport.Vibe || rawReport.clientPulse || rawReport.client_pulse || "No concerns"),
-      status: String(rawReport.status || rawReport.Status || "On Track") as "On Track" | "At Risk" | "Blocked",
-    };
-
-    return NextResponse.json(report);
+    return NextResponse.json(normalizeReport(JSON.parse(content)));
   } catch (error) {
     console.error("Report generation error:", error);
     return NextResponse.json(
