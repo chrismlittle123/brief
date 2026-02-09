@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ArrowLeft, Mic, MicOff, Sparkles } from "lucide-react";
 import { CompletePage } from "./complete";
-import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { transcribeAudio, generateReport, Report } from "@/lib/api";
 import { BriefLogo } from "@/components/brief-logo";
 

@@ -1,0 +1,97 @@
+# TypeScript - Frontend Internal
+# For React/frontend projects with moderate checks
+
+# =============================================================================
+# ESLint
+# =============================================================================
+
+[code.linting.eslint]
+enabled = true
+ignore = ["**/dist/**", "**/node_modules/**", "**/build/**"]
+max-warnings = 0
+
+[code.linting.eslint.rules]
+
+# Code quality limits (frontend-specific: higher limits for components)
+"max-depth" = { severity = "error", max = 4 }
+"max-params" = { severity = "error", max = 4 }
+"max-lines-per-function" = { severity = "error", max = 100 }
+"max-lines" = { severity = "error", max = 500 }
+"complexity" = "error"
+"no-console" = { severity = "error", allow = ["error", "warn"] }
+
+# Core ESLint - Best practices
+"eqeqeq" = "error"
+"prefer-const" = "error"
+"no-var" = "error"
+
+# Core ESLint - Security
+"no-eval" = "error"
+"no-implied-eval" = "error"
+
+# Core ESLint - Bug prevention
+"array-callback-return" = "error"
+"no-template-curly-in-string" = "error"
+"consistent-return" = "error"
+
+# Import plugin (disabled for frontend - too slow on large React codebases)
+"import/no-cycle" = "off"
+
+# TypeScript-ESLint - Basic checks (AST-based, fast)
+"@typescript-eslint/no-unused-vars" = { severity = "error", argsIgnorePattern = "^_", varsIgnorePattern = "^_" }
+"@typescript-eslint/no-explicit-any" = "error"
+"@typescript-eslint/no-non-null-assertion" = "error"
+"@typescript-eslint/no-empty-object-type" = "off"
+
+# =============================================================================
+# TypeScript Compiler
+# =============================================================================
+
+[code.types.tsc]
+enabled = true
+
+[code.types.tsc.require]
+strict = true
+noImplicitAny = true
+strictNullChecks = true
+noUnusedLocals = true
+noImplicitReturns = true
+noFallthroughCasesInSwitch = true
+esModuleInterop = true
+skipLibCheck = true
+forceConsistentCasingInFileNames = true
+
+# =============================================================================
+# Security
+# =============================================================================
+
+[code.security.secrets]
+enabled = true
+
+[code.security.pnpmaudit]
+enabled = false  # lockfile is at monorepo root
+
+# =============================================================================
+# Dead Code Detection
+# =============================================================================
+
+[code.unused.knip]
+enabled = true
+
+# =============================================================================
+# Naming Conventions
+# =============================================================================
+
+[code.naming]
+enabled = true
+
+[[code.naming.rules]]
+extensions = ["ts"]
+file_case = "kebab-case"
+folder_case = "kebab-case"
+
+[[code.naming.rules]]
+extensions = ["tsx"]
+file_case = "kebab-case"
+folder_case = "kebab-case"
+allow_dynamic_routes = true

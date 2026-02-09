@@ -1,0 +1,28 @@
+[metadata]
+tier = "internal"
+
+# ESLint config lives in packages/frontend, not at monorepo root
+[code.linting.eslint]
+enabled = false
+
+# TypeScript checking happens at package level
+[code.types.tsc]
+enabled = false
+
+# Knip runs at package level; root false-positives for CLI tools and infra deps
+[code.unused.knip]
+enabled = false
+
+# TODO: Set up husky pre-push and commit-msg hooks
+[process.hooks]
+enabled = false
+
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml"]
+
+[process.commits]
+enabled = true
+types = ["feat", "fix", "chore", "docs", "refactor", "test", "style", "perf", "ci", "build"]
+require_scope = false
+max_subject_length = 100

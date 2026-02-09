@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getNotionApiKey, getNotionDatabaseId, getOpenAIApiKey } from "@/lib/secrets";
 import { SHAME_PROMPT, TEAM_MEMBERS, getEscalationLevel, EscalationLevel } from "@/lib/shame-prompt";
@@ -127,7 +127,7 @@ async function postToSlack(message: string): Promise<void> {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 1. Get submitted emails from Notion
     const submittedEmails = await getSubmittedEmails();
@@ -175,6 +175,4 @@ export async function GET(request: NextRequest) {
 }
 
 // Also allow POST for manual triggers
-export async function POST(request: NextRequest) {
-  return GET(request);
-}
+export { GET as POST };

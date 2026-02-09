@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const weekOfDate = monday.toISOString().split("T")[0];
 
     // Build children blocks
-    const children: any[] = [
+    const children: Record<string, unknown>[] = [
       // TL;DR section
       {
         object: "block",
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
     ];
 
     // Build properties
-    const properties: any = {
+    const properties: Record<string, unknown> = {
       Name: {
         title: [
           {

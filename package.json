@@ -9,8 +9,7 @@
     "lint": "pnpm --filter frontend lint"
   },
   "devDependencies": {
-    "puppeteer": "^24.36.1",
-    "tsx": "^4.21.0",
+    "@standards-kit/conform": "^0.3.2",
     "typescript": "^5.0.0"
   }
 }

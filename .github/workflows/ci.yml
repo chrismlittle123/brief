@@ -1,0 +1,34 @@
+name: Conform
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  conform-check:
+    name: Standards Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # needed for commit message check
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check root standards
+        run: npx @standards-kit/conform check
+
+      - name: Check frontend standards
+        run: npx @standards-kit/conform check --config packages/frontend/standards.toml
+
+      - name: Check infra standards
+        run: npx @standards-kit/conform check --config infra/standards.toml

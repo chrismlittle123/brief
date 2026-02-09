@@ -1,4 +1,4 @@
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/nextjs/server";
 
 const EVENT_TITLE = "Brief - Weekly Update";
 const EVENT_DESCRIPTION =
@@ -72,8 +72,6 @@ function toRFC3339(date: Date, hours: number, minutes: number): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-  const h = String(hours).padStart(2, "0");
-  const m = String(minutes).padStart(2, "0");
 
   // Determine London's UTC offset for this date
   const probe = new Date(`${year}-${month}-${day}T12:00:00Z`);
@@ -103,7 +101,7 @@ interface BusyInterval {
  * Find the slot 15 minutes after the user's last meeting on fridayDate.
  * If the user has no meetings, defaults to 12:00 (midday).
  */
-export async function findSlotAfterLastMeeting(
+async function findSlotAfterLastMeeting(
   accessToken: string,
   fridayDate: Date
 ): Promise<{ start: string; end: string } | null> {
@@ -238,7 +236,7 @@ export async function hasExistingReminder(
 /**
  * Create a 15-minute "Brief - Weekly Update" calendar event.
  */
-export async function createReminderEvent(
+async function createReminderEvent(
   accessToken: string,
   slot: { start: string; end: string }
 ): Promise<{ eventId: string; startTime: string } | null> {
