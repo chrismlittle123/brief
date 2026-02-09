@@ -90,6 +90,7 @@ export const TEAM_MEMBERS = [
   { email: "luan@palindrom.ai", name: "Luan", slackId: null },
   { email: "christopher.lovejoy@palindrom.ai", name: "Christopher", slackId: null },
   { email: "sam@palindrom.ai", name: "Sam", slackId: null },
+  { email: "gabor@palindrom.ai", name: "Gabor", slackId: null },
 ];
 
 export type EscalationLevel = "GENTLE" | "FULL_ROAST";
