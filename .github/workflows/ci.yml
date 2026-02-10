@@ -36,6 +36,12 @@ jobs:
       - name: Check frontend standards
         run: npx @standards-kit/conform check --config packages/frontend/standards.toml
 
+      - name: Audit api standards
+        run: npx @standards-kit/conform audit --config packages/api/standards.toml
+
+      - name: Check api standards
+        run: npx @standards-kit/conform check --config packages/api/standards.toml
+
       - name: Audit infra standards
         run: npx @standards-kit/conform audit --config infra/standards.toml
 

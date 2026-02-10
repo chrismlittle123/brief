@@ -1,28 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
+import { defineRoute, z, AppError } from "@palindrom/fastify-api";
 import OpenAI from "openai";
-import { getOpenAIApiKey } from "@/lib/secrets";
+import { getOpenAIApiKey } from "../lib/secrets.js";
+import { reportSchema } from "../lib/schemas.js";
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { currentReport, instruction } = body ?? {};
+export const refineReportRoute = defineRoute({
+  method: "POST",
+  url: "/refine-report",
+  auth: "public",
+  tags: ["Reports"],
+  summary: "Refine an existing report with natural language instructions",
+  schema: {
+    body: z.object({
+      currentReport: reportSchema,
+      instruction: z.string().min(1),
+    }),
+    response: {
+      200: reportSchema,
+    },
+  },
+  handler: async (request) => {
+    const { currentReport, instruction } = request.body;
 
-    if (!currentReport || typeof currentReport !== "object") {
-      return NextResponse.json(
-        { error: "Invalid request", message: "Missing or invalid 'currentReport' object" },
-        { status: 400 }
-      );
+    if (!instruction.trim()) {
+      throw AppError.badRequest("Missing or empty 'instruction' string");
     }
 
-    if (!instruction || typeof instruction !== "string" || !instruction.trim()) {
-      return NextResponse.json(
-        { error: "Invalid request", message: "Missing or empty 'instruction' string" },
-        { status: 400 }
-      );
-    }
-
-    const apiKey = getOpenAIApiKey();
-    const openai = new OpenAI({ apiKey });
+    const openai = new OpenAI({ apiKey: getOpenAIApiKey() });
 
     const systemPrompt = `You are an AI assistant helping refine a weekly status update report. Apply the user's requested changes to the report and return the updated version. Keep everything else the same unless the instruction implies otherwise.
 
@@ -61,19 +64,9 @@ Return ONLY valid JSON with this structure:
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
-      throw new Error("No response from OpenAI");
+      throw AppError.internal("No response from OpenAI");
     }
 
-    const report = JSON.parse(content);
-    return NextResponse.json(report);
-  } catch (error) {
-    console.error("Report refinement error:", error);
-    return NextResponse.json(
-      {
-        error: "Report refinement failed",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
-  }
-}
+    return JSON.parse(content);
+  },
+});

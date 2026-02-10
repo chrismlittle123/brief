@@ -1,18 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+import { defineRoute, z, AppError } from "@palindrom/fastify-api";
 import OpenAI from "openai";
-import { getOpenAIApiKey } from "@/lib/secrets";
+import { getOpenAIApiKey } from "../lib/secrets.js";
+import { reportSchema } from "../lib/schemas.js";
 
 function buildPrompt(responses: Record<string, string>): string {
   return `You are an AI assistant helping create a concise weekly status update. Based on the following responses, generate a clean, professional report.
 
 Responses:
-- What got done this week: ${responses.done || responses.work_done || responses.transcript || "No response"}
-- Challenges and how they were handled: ${responses.challenges || responses.blockers || "No response"}
-- Current status / what they're working on: ${responses.current_status || "No response"}
-- Plan for next week: ${responses.next_week || "No response"}
-- Dependencies / blockers: ${responses.dependencies || "No response"}
-- Support required: ${responses.support || "No response"}
-- Vibe check (personal and client): ${responses.vibe || responses.client_pulse || responses.other || "No response"}
+- What got done this week: ${responses["done"] || responses["work_done"] || responses["transcript"] || "No response"}
+- Challenges and how they were handled: ${responses["challenges"] || responses["blockers"] || "No response"}
+- Current status / what they're working on: ${responses["current_status"] || "No response"}
+- Plan for next week: ${responses["next_week"] || "No response"}
+- Dependencies / blockers: ${responses["dependencies"] || "No response"}
+- Support required: ${responses["support"] || "No response"}
+- Vibe check (personal and client): ${responses["vibe"] || responses["client_pulse"] || responses["other"] || "No response"}
 
 Generate a JSON response with the following structure:
 {
@@ -40,21 +41,27 @@ Return ONLY valid JSON, no markdown or explanation.`;
 function toStringArray(val: unknown): string[] {
   if (!val) return [];
   if (Array.isArray(val)) {
-    return val.flatMap(item => {
-      if (typeof item === 'string') return item;
-      if (typeof item === 'object' && item !== null) {
-        return Object.values(item).map(v => String(v));
+    return val.flatMap((item) => {
+      if (typeof item === "string") return item;
+      if (typeof item === "object" && item !== null) {
+        return Object.values(item).map((v) => String(v));
       }
       return String(item);
     });
   }
-  if (typeof val === 'object') {
-    return Object.values(val as Record<string, unknown>).flatMap(v => toStringArray(v));
+  if (typeof val === "object") {
+    return Object.values(val as Record<string, unknown>).flatMap((v) =>
+      toStringArray(v)
+    );
   }
   return [String(val)];
 }
 
-function pickString(raw: Record<string, unknown>, keys: string[], fallback: string): string {
+function pickString(
+  raw: Record<string, unknown>,
+  keys: string[],
+  fallback: string
+): string {
   for (const key of keys) {
     if (raw[key]) return String(raw[key]);
   }
@@ -71,27 +78,57 @@ function pickArray(raw: Record<string, unknown>, keys: string[]): string[] {
 function normalizeReport(raw: Record<string, unknown>) {
   return {
     tldr: pickString(raw, ["tldr", "TLDR", "summary"], ""),
-    thisWeek: pickArray(raw, ["thisWeek", "this_week", "accomplishments", "Accomplishments", "done"]),
+    thisWeek: pickArray(raw, [
+      "thisWeek",
+      "this_week",
+      "accomplishments",
+      "Accomplishments",
+      "done",
+    ]),
     challenges: pickArray(raw, ["challenges", "Challenges", "blockers"]),
-    currentStatus: pickString(raw, ["currentStatus", "current_status", "CurrentStatus"], ""),
+    currentStatus: pickString(
+      raw,
+      ["currentStatus", "current_status", "CurrentStatus"],
+      ""
+    ),
     nextWeek: pickArray(raw, ["nextWeek", "next_week", "NextWeek", "planned"]),
     dependencies: pickString(raw, ["dependencies", "Dependencies"], "None"),
-    supportRequired: pickString(raw, ["supportRequired", "support_required", "SupportRequired"], "None"),
-    vibe: pickString(raw, ["vibe", "Vibe", "clientPulse", "client_pulse"], "No concerns"),
-    status: pickString(raw, ["status", "Status"], "On Track") as "On Track" | "At Risk" | "Blocked",
+    supportRequired: pickString(
+      raw,
+      ["supportRequired", "support_required", "SupportRequired"],
+      "None"
+    ),
+    vibe: pickString(
+      raw,
+      ["vibe", "Vibe", "clientPulse", "client_pulse"],
+      "No concerns"
+    ),
+    status: pickString(raw, ["status", "Status"], "On Track") as
+      | "On Track"
+      | "At Risk"
+      | "Blocked",
   };
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const responses = body?.responses;
+export const generateReportRoute = defineRoute({
+  method: "POST",
+  url: "/generate-report",
+  auth: "public",
+  tags: ["Reports"],
+  summary: "Generate a weekly status report from responses",
+  schema: {
+    body: z.object({
+      responses: z.record(z.string()),
+    }),
+    response: {
+      200: reportSchema,
+    },
+  },
+  handler: async (request) => {
+    const { responses } = request.body;
 
     if (!responses || typeof responses !== "object") {
-      return NextResponse.json(
-        { error: "Invalid request", message: "Missing or invalid 'responses' object" },
-        { status: 400 }
-      );
+      throw AppError.badRequest("Missing or invalid 'responses' object");
     }
 
     const openai = new OpenAI({ apiKey: getOpenAIApiKey() });
@@ -104,18 +141,9 @@ export async function POST(request: NextRequest) {
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
-      throw new Error("No response from OpenAI");
+      throw AppError.internal("No response from OpenAI");
     }
 
-    return NextResponse.json(normalizeReport(JSON.parse(content)));
-  } catch (error) {
-    console.error("Report generation error:", error);
-    return NextResponse.json(
-      {
-        error: "Report generation failed",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
-  }
-}
+    return normalizeReport(JSON.parse(content));
+  },
+});

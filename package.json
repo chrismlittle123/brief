@@ -4,10 +4,12 @@
   "private": true,
   "packageManager": "pnpm@10.28.2",
   "scripts": {
-    "dev": "pnpm --filter frontend dev",
-    "build": "pnpm --filter frontend build",
-    "typecheck": "pnpm --filter frontend typecheck",
-    "lint": "pnpm --filter frontend lint",
+    "dev": "pnpm --filter frontend dev & pnpm --filter api dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:api": "pnpm --filter api dev",
+    "build": "pnpm --filter api build && pnpm --filter frontend build",
+    "typecheck": "pnpm --filter api typecheck && pnpm --filter frontend typecheck",
+    "lint": "pnpm --filter api lint && pnpm --filter frontend lint",
     "prepare": "husky"
   },
   "devDependencies": {

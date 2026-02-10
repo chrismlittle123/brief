@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
-import { getNotionApiKey, getNotionDatabaseId } from "@/lib/secrets";
+import { defineRoute, z, AppError } from "@palindrom/fastify-api";
+import { getNotionApiKey, getNotionDatabaseId } from "../lib/secrets.js";
+import { reportSchema } from "../lib/schemas.js";
 
 interface ReportData {
   tldr: string;
@@ -65,18 +65,24 @@ function buildChildren(report: ReportData): Record<string, unknown>[] {
   ];
 }
 
-function buildProperties(report: ReportData, now: Date, userEmail?: string) {
+function buildProperties(
+  report: ReportData,
+  now: Date,
+  userEmail?: string
+) {
   const monday = new Date(now);
   monday.setDate(now.getDate() - now.getDay() + 1);
   const weekOfDate = monday.toISOString().split("T")[0];
 
   const properties: Record<string, unknown> = {
     Name: {
-      title: [{
-        text: {
-          content: `Weekly Update - ${now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`,
+      title: [
+        {
+          text: {
+            content: `Weekly Update - ${now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`,
+          },
         },
-      }],
+      ],
     },
     Status: { select: { name: report.status } },
     "Week Of": { date: { start: weekOfDate } },
@@ -84,39 +90,54 @@ function buildProperties(report: ReportData, now: Date, userEmail?: string) {
   };
 
   if (userEmail) {
-    properties.Person = { email: userEmail };
+    properties["Person"] = { email: userEmail };
   }
 
   return properties;
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const report = body?.report as ReportData | undefined;
+export const saveToNotionRoute = defineRoute({
+  method: "POST",
+  url: "/save-to-notion",
+  auth: "public",
+  tags: ["Notion"],
+  summary: "Save a report to Notion",
+  schema: {
+    body: z.object({ report: reportSchema }),
+    response: {
+      200: z.object({
+        success: z.boolean(),
+        pageId: z.string(),
+        url: z.string(),
+      }),
+    },
+  },
+  handler: async (request) => {
+    const app = request.server;
+    const { userId } = await app.requireClerkAuth(request, request.raw as never);
 
-    if (!report || typeof report !== "object") {
-      return NextResponse.json(
-        { error: "Invalid request", message: "Missing or invalid 'report' object" },
-        { status: 400 }
+    // Get user email from Clerk
+    const user = await app.clerkClient.users.getUser(userId);
+    const userEmail = user.emailAddresses[0]?.emailAddress;
+
+    const { report } = request.body;
+
+    if (
+      !report.tldr ||
+      !Array.isArray(report.thisWeek) ||
+      !Array.isArray(report.nextWeek)
+    ) {
+      throw AppError.badRequest(
+        "Report must include 'tldr', 'thisWeek', and 'nextWeek'"
       );
     }
 
-    if (!report.tldr || !Array.isArray(report.thisWeek) || !Array.isArray(report.nextWeek)) {
-      return NextResponse.json(
-        { error: "Invalid request", message: "Report must include 'tldr', 'thisWeek', and 'nextWeek'" },
-        { status: 400 }
-      );
-    }
-
-    const user = await currentUser();
-    const userEmail = user?.emailAddresses[0]?.emailAddress;
     const now = new Date();
 
     const response = await fetch("https://api.notion.com/v1/pages", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${getNotionApiKey()}`,
+        Authorization: `Bearer ${getNotionApiKey()}`,
         "Notion-Version": "2022-06-28",
         "Content-Type": "application/json",
       },
@@ -128,25 +149,18 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Notion API error: ${response.status}`);
+      const errorData = (await response.json()) as { message?: string };
+      throw AppError.internal(
+        errorData.message || `Notion API error: ${response.status}`
+      );
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { id: string };
 
-    return NextResponse.json({
+    return {
       success: true,
       pageId: data.id,
       url: `https://notion.so/${data.id.replace(/-/g, "")}`,
-    });
-  } catch (error) {
-    console.error("Notion save error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to save to Notion",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
-  }
-}
+    };
+  },
+});

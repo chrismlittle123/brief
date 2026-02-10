@@ -1,4 +1,4 @@
-import { clerkClient } from "@clerk/nextjs/server";
+import type { ClerkClient } from "@clerk/backend";
 
 const EVENT_TITLE = "Brief - Weekly Update";
 const EVENT_DESCRIPTION =
@@ -17,10 +17,10 @@ export interface CalendarResult {
 }
 
 export async function getGoogleAccessToken(
-  userId: string
+  userId: string,
+  clerk: ClerkClient
 ): Promise<string | null> {
-  const client = await clerkClient();
-  const tokenResponse = await client.users.getUserOauthAccessToken(
+  const tokenResponse = await clerk.users.getUserOauthAccessToken(
     userId,
     "google"
   );
@@ -46,11 +46,6 @@ export function getNextFriday(from: Date = new Date()): Date {
   return friday;
 }
 
-/**
- * Build a datetime string for a given date and hour/minute in Europe/London.
- * For Google Calendar event creation (paired with timeZone), returns bare datetime.
- * For query APIs (FreeBusy, Events list), use toRFC3339() instead.
- */
 function toLondonDatetime(date: Date, hours: number, minutes: number): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -60,20 +55,11 @@ function toLondonDatetime(date: Date, hours: number, minutes: number): string {
   return `${year}-${month}-${day}T${h}:${m}:00`;
 }
 
-/**
- * Build an RFC3339 timestamp for Google Calendar query APIs.
- * Interprets the given hours/minutes as Europe/London wall-clock time
- * and converts to UTC. In GMT (winter) the offset is +00:00; in BST (summer) it's +01:00.
- * We use Intl to determine the correct offset.
- */
 function toRFC3339(date: Date, hours: number, minutes: number): string {
-  // Create a Date object representing the London wall-clock time
-  // by building an ISO string and parsing with the timezone offset
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
 
-  // Determine London's UTC offset for this date
   const probe = new Date(`${year}-${month}-${day}T12:00:00Z`);
   const londonTime = new Intl.DateTimeFormat("en-GB", {
     timeZone: TIMEZONE,
@@ -81,13 +67,17 @@ function toRFC3339(date: Date, hours: number, minutes: number): string {
     timeZoneName: "shortOffset",
   }).formatToParts(probe);
   const offsetPart = londonTime.find((p) => p.type === "timeZoneName");
-  // offsetPart.value is like "GMT" or "GMT+1"
   const offsetMatch = offsetPart?.value?.match(/GMT([+-]\d+)?/);
   const offsetHours = offsetMatch?.[1] ? parseInt(offsetMatch[1], 10) : 0;
 
-  // Convert London wall-clock to UTC
   const utcDate = new Date(
-    Date.UTC(year, date.getMonth(), date.getDate(), hours - offsetHours, minutes)
+    Date.UTC(
+      year,
+      date.getMonth(),
+      date.getDate(),
+      hours - offsetHours,
+      minutes
+    )
   );
   return utcDate.toISOString();
 }
@@ -97,10 +87,6 @@ interface BusyInterval {
   end: string;
 }
 
-/**
- * Find the slot 15 minutes after the user's last meeting on fridayDate.
- * If the user has no meetings, defaults to 12:00 (midday).
- */
 async function findSlotAfterLastMeeting(
   accessToken: string,
   fridayDate: Date
@@ -134,7 +120,9 @@ async function findSlotAfterLastMeeting(
     return null;
   }
 
-  const freeBusyData = await freeBusyResponse.json();
+  const freeBusyData = (await freeBusyResponse.json()) as {
+    calendars?: { primary?: { busy?: BusyInterval[] } };
+  };
   const busyIntervals: BusyInterval[] =
     freeBusyData.calendars?.primary?.busy ?? [];
 
@@ -142,20 +130,16 @@ async function findSlotAfterLastMeeting(
   let slotStartMin: number;
 
   if (busyIntervals.length === 0) {
-    // No meetings — default to midday
     slotStartHour = DEFAULT_HOUR_NO_MEETINGS;
     slotStartMin = 0;
   } else {
-    // Find the latest meeting end time
     const latestEnd = busyIntervals.reduce((latest, interval) => {
       const end = new Date(interval.end).getTime();
       return end > latest ? end : latest;
     }, 0);
 
-    // Schedule 15 minutes after the last meeting ends
     const slotStart = new Date(latestEnd + SLOT_DURATION_MINUTES * 60 * 1000);
 
-    // Convert UTC timestamp back to London wall-clock time
     const londonParts = new Intl.DateTimeFormat("en-GB", {
       timeZone: TIMEZONE,
       hour: "numeric",
@@ -180,9 +164,6 @@ async function findSlotAfterLastMeeting(
   return { start, end };
 }
 
-/**
- * Check if a "Brief - Weekly Update" event already exists for the given Friday.
- */
 export async function hasExistingReminder(
   accessToken: string,
   fridayDate: Date
@@ -213,9 +194,15 @@ export async function hasExistingReminder(
     return { exists: false };
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    items?: Array<{
+      id: string;
+      summary?: string;
+      start?: { dateTime?: string; date?: string };
+    }>;
+  };
   const existing = (data.items ?? []).find(
-    (e: { summary?: string }) => e.summary === EVENT_TITLE
+    (e) => e.summary === EVENT_TITLE
   );
 
   if (existing) {
@@ -229,9 +216,6 @@ export async function hasExistingReminder(
   return { exists: false };
 }
 
-/**
- * Create a 15-minute "Brief - Weekly Update" calendar event.
- */
 async function createReminderEvent(
   accessToken: string,
   slot: { start: string; end: string }
@@ -247,19 +231,11 @@ async function createReminderEvent(
       body: JSON.stringify({
         summary: EVENT_TITLE,
         description: EVENT_DESCRIPTION,
-        start: {
-          dateTime: slot.start,
-          timeZone: TIMEZONE,
-        },
-        end: {
-          dateTime: slot.end,
-          timeZone: TIMEZONE,
-        },
+        start: { dateTime: slot.start, timeZone: TIMEZONE },
+        end: { dateTime: slot.end, timeZone: TIMEZONE },
         reminders: {
           useDefault: false,
-          overrides: [
-            { method: "popup", minutes: 0 },
-          ],
+          overrides: [{ method: "popup", minutes: 0 }],
         },
       }),
     }
@@ -274,28 +250,27 @@ async function createReminderEvent(
     return null;
   }
 
-  const event = await response.json();
+  const event = (await response.json()) as {
+    id: string;
+    start?: { dateTime?: string };
+  };
   return {
     eventId: event.id,
     startTime: event.start?.dateTime ?? slot.start,
   };
 }
 
-/**
- * Full scheduling flow: check for existing, find free slot, create event.
- * Used by both the API route and the save-to-notion integration.
- */
 export async function scheduleReminder(
-  userId: string
+  userId: string,
+  clerk: ClerkClient
 ): Promise<CalendarResult> {
-  const accessToken = await getGoogleAccessToken(userId);
+  const accessToken = await getGoogleAccessToken(userId, clerk);
   if (!accessToken) {
     return { scheduled: false, reason: "no_google_token" };
   }
 
   const fridayDate = getNextFriday();
 
-  // Idempotent: check if event already exists
   const existing = await hasExistingReminder(accessToken, fridayDate);
   if (existing.exists) {
     return {
@@ -305,13 +280,11 @@ export async function scheduleReminder(
     };
   }
 
-  // Find slot after last meeting of the day
   const slot = await findSlotAfterLastMeeting(accessToken, fridayDate);
   if (!slot) {
     return { scheduled: false, reason: "calendar_query_failed" };
   }
 
-  // Create the event
   const result = await createReminderEvent(accessToken, slot);
   if (!result) {
     return { scheduled: false, reason: "create_failed" };

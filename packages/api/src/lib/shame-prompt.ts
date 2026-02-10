@@ -88,7 +88,11 @@ export const TEAM_MEMBERS = [
   { email: "jon@palindrom.ai", name: "Jon", slackId: null },
   { email: "talha@palindrom.ai", name: "Talha", slackId: null },
   { email: "luan@palindrom.ai", name: "Luan", slackId: null },
-  { email: "christopher.lovejoy@palindrom.ai", name: "Christopher", slackId: null },
+  {
+    email: "christopher.lovejoy@palindrom.ai",
+    name: "Christopher",
+    slackId: null,
+  },
   { email: "sam@palindrom.ai", name: "Sam", slackId: null },
   { email: "gabor@palindrom.ai", name: "Gabor", slackId: null },
 ];
