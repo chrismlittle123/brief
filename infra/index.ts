@@ -1,10 +1,6 @@
-import * as dotenv from "dotenv";
-import * as path from "path";
 import * as gcp from "@pulumi/gcp";
-import { defineConfig, createSecret, createContainer } from "@palindrom-ai/infra";
-
-// Load .env from parent directory
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+import * as pulumi from "@pulumi/pulumi";
+import { defineConfig, createSecret } from "@palindrom-ai/infra";
 
 // Configure for GCP dev environment
 defineConfig({
@@ -14,35 +10,23 @@ defineConfig({
   environment: "dev",
 });
 
-// --- Secrets ---
+// --- Secrets (values managed externally in GCP Secret Manager) ---
 
-// OpenAI credentials (for Whisper transcription and GPT)
-const openaiApiKey = createSecret("openai-api-key", {
-  value: process.env.OPENAI_API_KEY,
-});
+const openaiApiKey = createSecret("openai-api-key");
+const notionApiKey = createSecret("notion-api-key");
+const notionDatabaseId = createSecret("notion-database-id");
+const slackWebhookUrl = createSecret("slack-webhook-url");
+const clerkSecretKey = createSecret("clerk-secret-key");
+const clerkPublishableKey = createSecret("clerk-publishable-key");
 
-// Notion credentials
-const notionApiKey = createSecret("notion-api-key", {
-  value: process.env.NOTION_API_KEY,
-});
-
-const notionDatabaseId = createSecret("notion-database-id", {
-  value: process.env.NOTION_DATABASE_ID,
-});
-
-// Slack
-const slackWebhookUrl = createSecret("slack-webhook-url", {
-  value: process.env.SLACK_WEBHOOK_URL,
-});
-
-// Clerk auth
-const clerkSecretKey = createSecret("clerk-secret-key", {
-  value: process.env.CLERK_SECRET_KEY,
-});
-
-const clerkPublishableKey = createSecret("clerk-publishable-key", {
-  value: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-});
+const allSecrets = [
+  openaiApiKey,
+  notionApiKey,
+  notionDatabaseId,
+  slackWebhookUrl,
+  clerkSecretKey,
+  clerkPublishableKey,
+];
 
 // --- Artifact Registry ---
 
@@ -53,34 +37,96 @@ const registry = new gcp.artifactregistry.Repository("brief-registry", {
   description: "Docker images for Brief API",
 });
 
-// --- Cloud Run container ---
+// --- Cloud Run service (inline for native secret references) ---
 
 const apiImage = "europe-west2-docker.pkg.dev/christopher-little-dev/brief/api:latest";
+const serviceName = "brief-api-container-dev";
 
-const api = createContainer("api", {
-  image: apiImage,
-  port: 8080,
-  size: "small",
-  minInstances: 0,
-  maxInstances: 2,
-  healthCheckPath: "/health",
-  environment: {
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? "",
-    NOTION_API_KEY: process.env.NOTION_API_KEY ?? "",
-    NOTION_DATABASE_ID: process.env.NOTION_DATABASE_ID ?? "",
-    SLACK_WEBHOOK_URL: process.env.SLACK_WEBHOOK_URL ?? "",
-    CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY ?? "",
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "",
-    PORT: "8080",
+// Service account (logical name matches createContainer: "api-sa")
+const serviceAccount = new gcp.serviceaccount.Account("api-sa", {
+  accountId: serviceName.substring(0, 28),
+  displayName: `Service account for ${serviceName}`,
+});
+
+// Grant secret accessor role to service account (logical names: "api-secret-access-{N}")
+const member = pulumi.interpolate`serviceAccount:${serviceAccount.email}`;
+allSecrets.forEach((secret, index) => {
+  new gcp.secretmanager.SecretIamMember(`api-secret-access-${index}`, {
+    secretId: secret.secretArn,
+    role: "roles/secretmanager.secretAccessor",
+    member,
+  });
+});
+
+// Cloud Run service (logical name: "api")
+const api = new gcp.cloudrunv2.Service("api", {
+  name: serviceName,
+  location: "europe-west2",
+  ingress: "INGRESS_TRAFFIC_ALL",
+  deletionProtection: false,
+  template: {
+    serviceAccount: serviceAccount.email,
+    labels: {
+      environment: "dev",
+      project: "brief",
+      "managed-by": "palindrom-infra",
+    },
+    maxInstanceRequestConcurrency: 80,
+    scaling: {
+      minInstanceCount: 0,
+      maxInstanceCount: 2,
+    },
+    containers: [{
+      image: apiImage,
+      ports: { containerPort: 8080 },
+      resources: {
+        limits: {
+          cpu: "1",
+          memory: "512Mi",
+        },
+        cpuIdle: true,
+      },
+      envs: [
+        { name: "PORT", value: "8080" },
+        {
+          name: "OPENAI_API_KEY",
+          valueSource: { secretKeyRef: { secret: openaiApiKey.secretName, version: "latest" } },
+        },
+        {
+          name: "NOTION_API_KEY",
+          valueSource: { secretKeyRef: { secret: notionApiKey.secretName, version: "latest" } },
+        },
+        {
+          name: "NOTION_DATABASE_ID",
+          valueSource: { secretKeyRef: { secret: notionDatabaseId.secretName, version: "latest" } },
+        },
+        {
+          name: "SLACK_WEBHOOK_URL",
+          valueSource: { secretKeyRef: { secret: slackWebhookUrl.secretName, version: "latest" } },
+        },
+        {
+          name: "CLERK_SECRET_KEY",
+          valueSource: { secretKeyRef: { secret: clerkSecretKey.secretName, version: "latest" } },
+        },
+        {
+          name: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+          valueSource: { secretKeyRef: { secret: clerkPublishableKey.secretName, version: "latest" } },
+        },
+      ],
+    }],
   },
-  link: [
-    openaiApiKey,
-    notionApiKey,
-    notionDatabaseId,
-    slackWebhookUrl,
-    clerkSecretKey,
-    clerkPublishableKey,
-  ],
+  traffics: [{
+    type: "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST",
+    percent: 100,
+  }],
+});
+
+// Public access (logical name: "api-invoker")
+new gcp.cloudrunv2.ServiceIamMember("api-invoker", {
+  name: api.name,
+  location: "europe-west2",
+  role: "roles/run.invoker",
+  member: "allUsers",
 });
 
 // --- Exports ---
@@ -95,4 +141,5 @@ export const secrets = {
 };
 
 export const registryName = registry.name;
-export const apiUrl = api.url;
+export const apiUrl = api.uri;
+export const apiServiceName = api.name;

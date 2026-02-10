@@ -1,0 +1,84 @@
+name: Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to destroy"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  GCP_REGION: europe-west2
+
+jobs:
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      project: ${{ steps.set-project.outputs.project }}
+      workload_identity_provider: ${{ steps.set-project.outputs.workload_identity_provider }}
+      service_account: ${{ steps.set-project.outputs.service_account }}
+      pulumi_state_bucket: ${{ steps.set-project.outputs.pulumi_state_bucket }}
+    steps:
+      - name: Set environment
+        id: set-env
+        run: echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+
+      - name: Set GCP project
+        id: set-project
+        run: |
+          case "${{ steps.set-env.outputs.environment }}" in
+            dev)
+              echo "project=christopher-little-dev" >> $GITHUB_OUTPUT
+              echo "workload_identity_provider=projects/10492061315/locations/global/workloadIdentityPools/github-pool/providers/github-provider" >> $GITHUB_OUTPUT
+              echo "service_account=github-actions@christopher-little-dev.iam.gserviceaccount.com" >> $GITHUB_OUTPUT
+              echo "pulumi_state_bucket=gs://pulumi-state-christopher-little-dev" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  destroy:
+    name: Destroy ${{ needs.setup.outputs.environment }} Resources
+    runs-on: ubuntu-latest
+    needs: [setup]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ needs.setup.outputs.workload_identity_provider }}
+          service_account: ${{ needs.setup.outputs.service_account }}
+
+      - name: Install Pulumi
+        run: curl -fsSL https://get.pulumi.com | sh && echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
+
+      - name: Destroy
+        working-directory: infra
+        run: |
+          export PATH="$HOME/.pulumi/bin:$PATH"
+          pulumi login ${{ needs.setup.outputs.pulumi_state_bucket }}
+          pulumi stack select ${{ needs.setup.outputs.environment }} --create
+          pulumi refresh --yes
+          pulumi destroy --yes
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ""
+          GOOGLE_PROJECT: ${{ needs.setup.outputs.project }}
+        timeout-minutes: 30
