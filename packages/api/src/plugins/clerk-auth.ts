@@ -6,7 +6,7 @@ import {
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { AppError } from "@palindrom/fastify-api";
 
-export interface ClerkAuth {
+interface ClerkAuth {
   userId: string;
 }
 

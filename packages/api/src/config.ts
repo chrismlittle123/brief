@@ -1,6 +1,6 @@
 type LogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace";
 
-export interface AppConfig {
+interface AppConfig {
   name: string;
   port: number;
   host: string;

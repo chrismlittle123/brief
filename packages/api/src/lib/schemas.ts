@@ -11,5 +11,3 @@ export const reportSchema = z.object({
   vibe: z.string(),
   status: z.enum(["On Track", "At Risk", "Blocked"]),
 });
-
-export type Report = z.infer<typeof reportSchema>;
