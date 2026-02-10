@@ -87,7 +87,6 @@ const api = new gcp.cloudrunv2.Service("api", {
         cpuIdle: true,
       },
       envs: [
-        { name: "PORT", value: "8080" },
         {
           name: "OPENAI_API_KEY",
           valueSource: { secretKeyRef: { secret: openaiApiKey.secretName, version: "latest" } },
