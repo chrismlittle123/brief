@@ -13,37 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2 # needed for commit message check
+          fetch-depth: 2
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Audit root standards
-        run: npx @standards-kit/conform audit
-
-      - name: Check root standards
-        run: npx @standards-kit/conform check
-
-      - name: Audit frontend standards
-        run: npx @standards-kit/conform audit --config packages/frontend/standards.toml
-
-      - name: Check frontend standards
-        run: npx @standards-kit/conform check --config packages/frontend/standards.toml
-
-      - name: Audit api standards
-        run: npx @standards-kit/conform audit --config packages/api/standards.toml
-
-      - name: Check api standards
-        run: npx @standards-kit/conform check --config packages/api/standards.toml
-
-      - name: Audit infra standards
-        run: npx @standards-kit/conform audit --config infra/standards.toml
-
-      - name: Check infra standards
-        run: npx @standards-kit/conform check --config infra/standards.toml
+      - uses: chrismlittle123/github-actions/typescript-standards-check@main
