@@ -6,6 +6,14 @@ export function getOpenAIApiKey(): string {
   return key;
 }
 
+export function getLLMGatewayUrl(): string {
+  const url = process.env["LLM_GATEWAY_URL"];
+  if (!url) {
+    throw new Error("LLM_GATEWAY_URL environment variable is not set");
+  }
+  return url;
+}
+
 export function getNotionApiKey(): string {
   const key = process.env["NOTION_API_KEY"];
   if (!key) {

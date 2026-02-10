@@ -1,6 +1,6 @@
 import { defineRoute, z, AppError } from "@palindrom/fastify-api";
-import OpenAI from "openai";
-import { getOpenAIApiKey } from "../lib/secrets.js";
+import { LLMClient } from "../lib/llm.js";
+import { getLLMGatewayUrl } from "../lib/secrets.js";
 import { reportSchema } from "../lib/schemas.js";
 
 function buildPrompt(responses: Record<string, string>): string {
@@ -131,19 +131,18 @@ export const generateReportRoute = defineRoute({
       throw AppError.badRequest("Missing or invalid 'responses' object");
     }
 
-    const openai = new OpenAI({ apiKey: getOpenAIApiKey() });
+    const llm = new LLMClient(getLLMGatewayUrl());
 
-    const completion = await openai.chat.completions.create({
+    const completion = await llm.complete({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: buildPrompt(responses) }],
-      response_format: { type: "json_object" },
+      fallbacks: ["claude-3-5-haiku-latest"],
     });
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw AppError.internal("No response from OpenAI");
+    if (!completion.content) {
+      throw AppError.internal("No response from LLM gateway");
     }
 
-    return normalizeReport(JSON.parse(content));
+    return normalizeReport(JSON.parse(completion.content));
   },
 });

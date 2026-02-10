@@ -1,9 +1,9 @@
 import { defineRoute, z } from "@palindrom/fastify-api";
-import OpenAI from "openai";
+import { LLMClient } from "../lib/llm.js";
 import {
+  getLLMGatewayUrl,
   getNotionApiKey,
   getNotionDatabaseId,
-  getOpenAIApiKey,
   getSlackWebhookUrl,
 } from "../lib/secrets.js";
 import {
@@ -129,7 +129,7 @@ async function generateShameMessage(
   delinquents: { name: string; email: string }[],
   level: EscalationLevel
 ): Promise<string> {
-  const openai = new OpenAI({ apiKey: getOpenAIApiKey() });
+  const llm = new LLMClient(getLLMGatewayUrl());
 
   const delinquentList = delinquents
     .map((d) => `• ${d.name} (${d.email})`)
@@ -149,16 +149,13 @@ ${delinquentList}
 
 Generate the shame message now:`;
 
-  const completion = await openai.chat.completions.create({
+  const completion = await llm.complete({
     model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
-    max_tokens: 300,
+    fallbacks: ["claude-3-5-haiku-latest"],
   });
 
-  return (
-    completion.choices[0]?.message?.content ||
-    "Updates are due Monday 9am!"
-  );
+  return completion.content || "Updates are due Monday 9am!";
 }
 
 async function postToSlack(message: string): Promise<void> {

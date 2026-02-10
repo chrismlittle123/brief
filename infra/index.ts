@@ -12,6 +12,7 @@ defineConfig({
 
 // --- Secrets (values managed externally in GCP Secret Manager) ---
 
+const llmGatewayUrl = createSecret("llm-gateway-url");
 const openaiApiKey = createSecret("openai-api-key");
 const notionApiKey = createSecret("notion-api-key");
 const notionDatabaseId = createSecret("notion-database-id");
@@ -20,6 +21,7 @@ const clerkSecretKey = createSecret("clerk-secret-key");
 const clerkPublishableKey = createSecret("clerk-publishable-key");
 
 const allSecrets = [
+  llmGatewayUrl,
   openaiApiKey,
   notionApiKey,
   notionDatabaseId,
@@ -99,6 +101,10 @@ const api = new gcp.cloudrunv2.Service("api", {
       },
       envs: [
         {
+          name: "LLM_GATEWAY_URL",
+          valueSource: { secretKeyRef: { secret: llmGatewayUrl.secretName, version: "latest" } },
+        },
+        {
           name: "OPENAI_API_KEY",
           valueSource: { secretKeyRef: { secret: openaiApiKey.secretName, version: "latest" } },
         },
@@ -142,6 +148,7 @@ new gcp.cloudrunv2.ServiceIamMember("api-invoker", {
 // --- Exports ---
 
 export const secrets = {
+  llmGatewayUrl: llmGatewayUrl.secretName,
   openaiApiKey: openaiApiKey.secretName,
   notionApiKey: notionApiKey.secretName,
   notionDatabaseId: notionDatabaseId.secretName,

@@ -1,6 +1,6 @@
 import { defineRoute, z, AppError } from "@palindrom/fastify-api";
-import OpenAI from "openai";
-import { getOpenAIApiKey } from "../lib/secrets.js";
+import { LLMClient } from "../lib/llm.js";
+import { getLLMGatewayUrl } from "../lib/secrets.js";
 import { reportSchema } from "../lib/schemas.js";
 
 export const refineReportRoute = defineRoute({
@@ -25,7 +25,7 @@ export const refineReportRoute = defineRoute({
       throw AppError.badRequest("Missing or empty 'instruction' string");
     }
 
-    const openai = new OpenAI({ apiKey: getOpenAIApiKey() });
+    const llm = new LLMClient(getLLMGatewayUrl());
 
     const systemPrompt = `You are an AI assistant helping refine a weekly status update report. Apply the user's requested changes to the report and return the updated version. Keep everything else the same unless the instruction implies otherwise.
 
@@ -53,20 +53,19 @@ Return ONLY valid JSON with this structure:
   "status": "On Track" | "At Risk" | "Blocked"
 }`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await llm.complete({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: instruction },
       ],
-      response_format: { type: "json_object" },
+      fallbacks: ["claude-3-5-haiku-latest"],
     });
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw AppError.internal("No response from OpenAI");
+    if (!completion.content) {
+      throw AppError.internal("No response from LLM gateway");
     }
 
-    return JSON.parse(content);
+    return JSON.parse(completion.content);
   },
 });
