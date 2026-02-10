@@ -6,14 +6,14 @@ import {
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { AppError } from "@palindrom/fastify-api";
 
-interface ClerkAuth {
+type ClerkAuth = {
   userId: string;
-}
+};
 
-interface ClerkAuthOptions {
+type ClerkAuthOptions = {
   secretKey: string;
   publishableKey: string;
-}
+};
 
 declare module "fastify" {
   interface FastifyInstance {

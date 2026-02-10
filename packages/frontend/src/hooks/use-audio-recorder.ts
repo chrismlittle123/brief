@@ -1,10 +1,14 @@
 import { useState, useRef, useCallback } from "react";
 
-interface UseAudioRecorderReturn {
+type UseAudioRecorderReturn = {
   isRecording: boolean;
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<Blob | null>;
   error: string | null;
+};
+
+function stopAllTracks(mediaRecorder: MediaRecorder) {
+  mediaRecorder.stream.getTracks().forEach((track) => track.stop());
 }
 
 export function useAudioRecorder(): UseAudioRecorderReturn {
@@ -17,25 +21,16 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     try {
       setError(null);
       chunksRef.current = [];
-
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: "audio/webm;codecs=opus",
-      });
-
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
+        if (event.data.size > 0) chunksRef.current.push(event.data);
       };
-
       mediaRecorderRef.current = mediaRecorder;
-      mediaRecorder.start(100); // Collect data every 100ms
+      mediaRecorder.start(100);
       setIsRecording(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to start recording";
-      setError(message);
-      console.error("Recording error:", err);
+      setError(err instanceof Error ? err.message : "Failed to start recording");
     }
   }, []);
 
@@ -47,25 +42,15 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         resolve(null);
         return;
       }
-
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-
-        // Stop all tracks
-        mediaRecorder.stream.getTracks().forEach((track) => track.stop());
-
+        stopAllTracks(mediaRecorder);
         setIsRecording(false);
         resolve(blob);
       };
-
       mediaRecorder.stop();
     });
   }, []);
 
-  return {
-    isRecording,
-    startRecording,
-    stopRecording,
-    error,
-  };
+  return { isRecording, startRecording, stopRecording, error };
 }

@@ -1,5 +1,5 @@
 # ---- Builder ----
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY packages/api/ packages/api/
 RUN pnpm --filter api build
 
 # ---- Runner ----
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 WORKDIR /app
 

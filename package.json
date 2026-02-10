@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "pnpm --filter frontend dev & pnpm --filter api dev",
     "dev:frontend": "pnpm --filter frontend dev",
@@ -10,6 +13,7 @@
     "build": "pnpm --filter api build && pnpm --filter frontend build",
     "typecheck": "pnpm --filter api typecheck && pnpm --filter frontend typecheck",
     "lint": "pnpm --filter api lint && pnpm --filter frontend lint",
+    "test": "pnpm --filter api test && pnpm --filter frontend test",
     "prepare": "husky"
   },
   "devDependencies": {

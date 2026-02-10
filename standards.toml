@@ -1,4 +1,7 @@
 [metadata]
+name = "brief"
+type = "monorepo"
+description = "Weekly status update tool with AI-powered report generation"
 tier = "internal"
 
 # ESLint config lives in packages/frontend, not at monorepo root

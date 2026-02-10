@@ -1,6 +1,6 @@
 type LogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace";
 
-interface AppConfig {
+type AppConfig = {
   name: string;
   port: number;
   host: string;
@@ -8,7 +8,7 @@ interface AppConfig {
   docs: { title: string; description: string; version: string; path: string };
   clerkSecretKey: string;
   clerkPublishableKey: string;
-}
+};
 
 function requireEnv(name: string): string {
   const value = process.env[name];

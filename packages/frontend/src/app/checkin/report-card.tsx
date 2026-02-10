@@ -5,18 +5,23 @@ import { Report } from "@/lib/api";
 
 function StatusBadge({ status }: { status: string }) {
   const colorClass =
-    status === "On Track" ? "bg-success/10 text-success" :
-    status === "At Risk" ? "bg-secondary/10 text-secondary" :
+    status === "ON_TRACK" ? "bg-success/10 text-success" :
+    status === "AT_RISK" ? "bg-secondary/10 text-secondary" :
     "bg-destructive/10 text-destructive";
   const dotClass =
-    status === "On Track" ? "bg-success" :
-    status === "At Risk" ? "bg-secondary" :
+    status === "ON_TRACK" ? "bg-success" :
+    status === "AT_RISK" ? "bg-secondary" :
     "bg-destructive";
+
+  const displayLabel =
+    status === "ON_TRACK" ? "On Track" :
+    status === "AT_RISK" ? "At Risk" :
+    "Blocked";
 
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${colorClass}`}>
       <span className={`h-2 w-2 rounded-full ${dotClass}`} />
-      {status}
+      {displayLabel}
     </span>
   );
 }
@@ -62,62 +67,55 @@ function ChallengesSection({ challenges }: { challenges: string[] }) {
   );
 }
 
+function ReportHeader({ weekOf, status }: { weekOf: string; status: string }) {
+  return (
+    <div className="mb-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-foreground">Weekly Update</h2>
+          <p className="text-muted-foreground">Week of {weekOf}</p>
+        </div>
+        <StatusBadge status={status} />
+      </div>
+    </div>
+  );
+}
+
+function ChecklistSection({ title, items, variant }: { title: string; items: string[]; variant: "done" | "upcoming" }) {
+  if (items.length === 0) return null;
+  return (
+    <Section title={title}>
+      <ul className="space-y-2.5">
+        {items.map((item, i) => (
+          <li key={i} className="flex items-start gap-3">
+            {variant === "done"
+              ? <Check className="h-5 w-5 text-success shrink-0 mt-0.5" />
+              : <div className="h-5 w-5 rounded-full border-2 border-muted shrink-0 mt-0.5" />}
+            <span className={variant === "done" ? "text-foreground" : "text-muted-foreground"}>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
 export function ReportCard({ report, weekOf }: { report: Report; weekOf: string }) {
   return (
     <>
-      <div className="mb-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground">Weekly Update</h2>
-            <p className="text-muted-foreground">Week of {weekOf}</p>
-          </div>
-          <StatusBadge status={report.status} />
-        </div>
-      </div>
-
+      <ReportHeader weekOf={weekOf} status={report.status} />
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-4">
         <h3 className="font-semibold text-foreground mb-2">TL;DR</h3>
         <p className="text-foreground leading-relaxed">{report.tldr}</p>
       </div>
-
-      {report.thisWeek.length > 0 && (
-        <Section title="This Week">
-          <ul className="space-y-2.5">
-            {report.thisWeek.map((item, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <Check className="h-5 w-5 text-success shrink-0 mt-0.5" />
-                <span className="text-foreground">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
+      <ChecklistSection title="This Week" items={report.thisWeek} variant="done" />
       <ChallengesSection challenges={report.challenges} />
-
-      {report.nextWeek.length > 0 && (
-        <Section title="Next Week">
-          <ul className="space-y-2.5">
-            {report.nextWeek.map((item, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <div className="h-5 w-5 rounded-full border-2 border-muted shrink-0 mt-0.5" />
-                <span className="text-muted-foreground">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
+      <ChecklistSection title="Next Week" items={report.nextWeek} variant="upcoming" />
       {report.currentStatus && <TextSection title="Current Status" text={report.currentStatus} />}
       {report.dependencies && report.dependencies !== "None" && <TextSection title="Dependencies" text={report.dependencies} />}
       {report.supportRequired && report.supportRequired !== "None" && <TextSection title="Support Required" text={report.supportRequired} />}
-
-      <div className="rounded-xl border border-border bg-card p-5 mb-6">
-        <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />Vibe Check
-        </h3>
+      <Section title="Vibe Check" icon={<Users className="h-4 w-4 text-primary" />}>
         <p className="text-muted-foreground">{report.vibe}</p>
-      </div>
+      </Section>
     </>
   );
 }

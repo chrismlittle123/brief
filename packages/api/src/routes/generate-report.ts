@@ -25,14 +25,14 @@ Generate a JSON response with the following structure:
   "dependencies": "Any blockers or things being waited on. Use 'None' if nothing.",
   "supportRequired": "Any help needed from the team. Use 'None' if nothing.",
   "vibe": "One sentence on how the person and client/stakeholder are feeling.",
-  "status": "On Track" | "At Risk" | "Blocked"
+  "status": "ON_TRACK" | "AT_RISK" | "BLOCKED"
 }
 
 Guidelines:
 - Keep it concise. No fluff.
 - For challenges, include what happened AND how it was handled (e.g., "Scope creep on feature X — added 3 days. Now using stricter change request process.")
 - If no challenges mentioned, use empty array
-- Status should reflect reality: "On Track" if things are going well, "At Risk" if there are unresolved challenges, "Blocked" if work is stopped
+- Status should reflect reality: "ON_TRACK" if things are going well, "AT_RISK" if there are unresolved challenges, "BLOCKED" if work is stopped
 - If dependencies or support are "None" or not mentioned, just use "None"
 
 Return ONLY valid JSON, no markdown or explanation.`;
@@ -103,16 +103,16 @@ function normalizeReport(raw: Record<string, unknown>) {
       ["vibe", "Vibe", "clientPulse", "client_pulse"],
       "No concerns"
     ),
-    status: pickString(raw, ["status", "Status"], "On Track") as
-      | "On Track"
-      | "At Risk"
-      | "Blocked",
+    status: pickString(raw, ["status", "Status"], "ON_TRACK") as
+      | "ON_TRACK"
+      | "AT_RISK"
+      | "BLOCKED",
   };
 }
 
 export const generateReportRoute = defineRoute({
   method: "POST",
-  url: "/generate-report",
+  url: "/v1/generate-report",
   auth: "public",
   tags: ["Reports"],
   summary: "Generate a weekly status report from responses",

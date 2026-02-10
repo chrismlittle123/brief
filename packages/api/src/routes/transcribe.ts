@@ -4,7 +4,7 @@ import { getOpenAIApiKey } from "../lib/secrets.js";
 
 export const transcribeRoute = defineRoute({
   method: "POST",
-  url: "/transcribe",
+  url: "/v1/transcribe",
   auth: "public",
   tags: ["Transcription"],
   summary: "Transcribe audio file using OpenAI Whisper",

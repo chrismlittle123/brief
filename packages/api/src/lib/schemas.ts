@@ -9,5 +9,5 @@ export const reportSchema = z.object({
   dependencies: z.string(),
   supportRequired: z.string(),
   vibe: z.string(),
-  status: z.enum(["On Track", "At Risk", "Blocked"]),
+  status: z.enum(["ON_TRACK", "AT_RISK", "BLOCKED"]),
 });

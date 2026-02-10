@@ -5,7 +5,7 @@ import { reportSchema } from "../lib/schemas.js";
 
 export const refineReportRoute = defineRoute({
   method: "POST",
-  url: "/refine-report",
+  url: "/v1/refine-report",
   auth: "public",
   tags: ["Reports"],
   summary: "Refine an existing report with natural language instructions",
@@ -50,7 +50,7 @@ Return ONLY valid JSON with this structure:
   "dependencies": "Any blockers or things being waited on",
   "supportRequired": "Any help needed from the team",
   "vibe": "One sentence on personal and client sentiment",
-  "status": "On Track" | "At Risk" | "Blocked"
+  "status": "ON_TRACK" | "AT_RISK" | "BLOCKED"
 }`;
 
     const completion = await llm.complete({

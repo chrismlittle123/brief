@@ -1,4 +1,4 @@
-import { defineRoute, z } from "@palindrom/fastify-api";
+import { defineRoute, z, AppError } from "@palindrom/fastify-api";
 import { LLMClient } from "../lib/llm.js";
 import {
   getLLMGatewayUrl,
@@ -19,6 +19,33 @@ function getCurrentWeekMonday(): string {
   const diff = now.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(now.setDate(diff));
   return monday.toISOString().split("T")[0];
+}
+
+type NotionPerson = {
+  properties?: {
+    Person?: {
+      email?: string;
+      people?: Array<{ person?: { email?: string } }>;
+    };
+  };
+};
+
+function extractEmailsFromResults(results: NotionPerson[]): string[] {
+  const emails: string[] = [];
+  for (const page of results) {
+    const personProp = page.properties?.Person;
+    if (personProp?.email) {
+      emails.push(personProp.email.toLowerCase());
+    }
+    if (personProp?.people) {
+      for (const person of personProp.people) {
+        if (person.person?.email) {
+          emails.push(person.person.email.toLowerCase());
+        }
+      }
+    }
+  }
+  return emails;
 }
 
 async function getSubmittedEmails(): Promise<string[]> {
@@ -45,35 +72,11 @@ async function getSubmittedEmails(): Promise<string[]> {
   );
 
   if (!response.ok) {
-    throw new Error(`Notion API error: ${response.status}`);
+    throw AppError.internal(`Notion API error: ${response.status}`);
   }
 
-  interface NotionPerson {
-    properties?: {
-      Person?: {
-        email?: string;
-        people?: Array<{ person?: { email?: string } }>;
-      };
-    };
-  }
   const data = (await response.json()) as { results: NotionPerson[] };
-  const emails: string[] = [];
-
-  for (const page of data.results) {
-    const personProp = page.properties?.Person;
-    if (personProp?.email) {
-      emails.push(personProp.email.toLowerCase());
-    }
-    if (personProp?.people) {
-      for (const person of personProp.people) {
-        if (person.person?.email) {
-          emails.push(person.person.email.toLowerCase());
-        }
-      }
-    }
-  }
-
-  return emails;
+  return extractEmailsFromResults(data.results);
 }
 
 const REFERENCE_THEMES = [
@@ -168,7 +171,7 @@ async function postToSlack(message: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error(`Slack webhook failed: ${response.status}`);
+    throw AppError.internal(`Slack webhook failed: ${response.status}`);
   }
 }
 
@@ -181,7 +184,6 @@ const shameBotResponseSchema = z.object({
 
 async function shameBotHandler() {
   const submittedEmails = await getSubmittedEmails();
-  console.warn("Submitted emails:", submittedEmails);
 
   const delinquents = TEAM_MEMBERS.filter(
     (member) => !submittedEmails.includes(member.email.toLowerCase())
@@ -212,7 +214,7 @@ async function shameBotHandler() {
 
 export const shameBotGetRoute = defineRoute({
   method: "GET",
-  url: "/shame-bot",
+  url: "/v1/shame-bot",
   auth: "public",
   tags: ["Shame Bot"],
   summary: "Run the shame bot (cron trigger)",
@@ -224,7 +226,7 @@ export const shameBotGetRoute = defineRoute({
 
 export const shameBotPostRoute = defineRoute({
   method: "POST",
-  url: "/shame-bot",
+  url: "/v1/shame-bot",
   auth: "public",
   tags: ["Shame Bot"],
   summary: "Run the shame bot (manual trigger)",

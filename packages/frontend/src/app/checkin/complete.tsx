@@ -123,12 +123,12 @@ function SaveButton({ isSaving, onClick }: { isSaving: boolean; onClick: () => v
   );
 }
 
-interface CompletePageProps {
+type CompletePageProps = {
   responses: Record<string, string>;
   initialReport?: Report;
-}
+};
 
-export function CompletePage({ responses, initialReport }: CompletePageProps) {
+function useCompletePageState(responses: Record<string, string>, initialReport?: Report) {
   const [showEditChat, setShowEditChat] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
@@ -140,22 +140,14 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
 
   useEffect(() => {
     if (initialReport) return;
-    async function generate() {
-      try {
-        setReport(await generateReport(responses));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to generate report");
-      } finally {
-        setIsGenerating(false);
-      }
-    }
-    generate();
+    generateReport(responses)
+      .then(setReport)
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to generate report"))
+      .finally(() => setIsGenerating(false));
   }, [responses, initialReport]);
 
-  if (isGenerating) return <LoadingView />;
-  if (error || !report) return <ErrorView error={error || "Failed to generate report"} />;
-
   const handleRefine = async (instruction: string) => {
+    if (!report) return;
     setIsRefining(true);
     try {
       setReport(await refineReport(report, instruction));
@@ -168,6 +160,7 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
   };
 
   const handleSave = async () => {
+    if (!report) return;
     setIsSaving(true);
     try {
       const result = await saveToNotion(report);
@@ -180,32 +173,35 @@ export function CompletePage({ responses, initialReport }: CompletePageProps) {
     }
   };
 
+  return { showEditChat, setShowEditChat, isSaving, showSavedPopup, setShowSavedPopup, report, isGenerating, error, isRefining, notionUrl, handleRefine, handleSave };
+}
+
+export function CompletePage({ responses, initialReport }: CompletePageProps) {
+  const state = useCompletePageState(responses, initialReport);
+
+  if (state.isGenerating) return <LoadingView />;
+  if (state.error || !state.report) return <ErrorView error={state.error || "Failed to generate report"} />;
+
   return (
     <main className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-2xl px-6 py-4 flex items-center justify-between">
           <BriefLogo className="h-12 w-auto" />
           <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3" />
-            AI Generated
+            <Sparkles className="h-3 w-3" />AI Generated
           </span>
         </div>
       </header>
-
       <div className="mx-auto max-w-2xl px-6 py-8">
-        <ReportCard report={report} weekOf={getWeekOf()} />
-
-        {showEditChat
-          ? <EditChat onUpdate={handleRefine} isRefining={isRefining} />
-          : <EditToggle onClick={() => setShowEditChat(true)} />
-        }
-
-        <SaveButton isSaving={isSaving} onClick={handleSave} />
+        <ReportCard report={state.report} weekOf={getWeekOf()} />
+        {state.showEditChat
+          ? <EditChat onUpdate={state.handleRefine} isRefining={state.isRefining} />
+          : <EditToggle onClick={() => state.setShowEditChat(true)} />}
+        <SaveButton isSaving={state.isSaving} onClick={state.handleSave} />
         <div className="mt-4 flex justify-center">
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Back to Home</Link>
         </div>
-
-        {showSavedPopup && <SavedPopup notionUrl={notionUrl} onClose={() => setShowSavedPopup(false)} />}
+        {state.showSavedPopup && <SavedPopup notionUrl={state.notionUrl} onClose={() => state.setShowSavedPopup(false)} />}
       </div>
     </main>
   );

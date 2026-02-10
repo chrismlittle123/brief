@@ -13,18 +13,18 @@ import { BriefLogo } from "@/components/brief-logo";
 
 type ViewState = "recording" | "editing" | "generating" | "complete";
 
-export default function CheckinPage() {
+function useCheckinState() {
   const [viewState, setViewState] = useState<ViewState>("recording");
   const [transcript, setTranscript] = useState("");
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<Report | null>(null);
-  const { isRecording, startRecording, stopRecording, error: recorderError } = useAudioRecorder();
+  const recorder = useAudioRecorder();
 
   const handleToggleRecording = useCallback(async () => {
     setError(null);
-    if (isRecording) {
-      const audioBlob = await stopRecording();
+    if (recorder.isRecording) {
+      const audioBlob = await recorder.stopRecording();
       if (audioBlob && audioBlob.size > 0) {
         setIsTranscribing(true);
         try {
@@ -37,19 +37,16 @@ export default function CheckinPage() {
         }
       }
     } else {
-      startRecording();
+      recorder.startRecording();
     }
-  }, [isRecording, stopRecording, startRecording]);
+  }, [recorder]);
 
   const handleGenerateReport = async () => {
     if (!transcript.trim()) { setError("Please record or enter your update first"); return; }
     setViewState("generating");
     setError(null);
     try {
-      const generated = await generateReport({
-        work_done: transcript, progress: "", on_track: "", blockers: "", next_week: "", other: "",
-      });
-      setReport(generated);
+      setReport(await generateReport({ work_done: transcript, progress: "", on_track: "", blockers: "", next_week: "", other: "" }));
       setViewState("complete");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate report");
@@ -57,19 +54,25 @@ export default function CheckinPage() {
     }
   };
 
+  return { viewState, setViewState, transcript, setTranscript, isTranscribing, error, report, recorder, handleToggleRecording, handleGenerateReport };
+}
+
+export default function CheckinPage() {
+  const state = useCheckinState();
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code !== "Space" || e.repeat || viewState !== "recording" || isTranscribing) return;
+      if (e.code !== "Space" || e.repeat || state.viewState !== "recording" || state.isTranscribing) return;
       if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
       e.preventDefault();
-      handleToggleRecording();
+      state.handleToggleRecording();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleToggleRecording, viewState, isTranscribing]);
+  }, [state]);
 
-  if (viewState === "complete" && report) {
-    return <CompletePage responses={{ transcript }} initialReport={report} />;
+  if (state.viewState === "complete" && state.report) {
+    return <CompletePage responses={{ transcript: state.transcript }} initialReport={state.report} />;
   }
 
   return (
@@ -82,23 +85,22 @@ export default function CheckinPage() {
           <BriefLogo className="h-12 w-auto" />
         </div>
       </header>
-
       <div className="mx-auto max-w-3xl px-6 py-8">
         <QuestionGrid />
         <div className="rounded-2xl border border-border bg-card p-8">
-          {viewState === "recording" && (
-            <RecordingView isRecording={isRecording} isTranscribing={isTranscribing} onToggle={handleToggleRecording} />
+          {state.viewState === "recording" && (
+            <RecordingView isRecording={state.recorder.isRecording} isTranscribing={state.isTranscribing} onToggle={state.handleToggleRecording} />
           )}
-          {(viewState === "editing" || viewState === "generating") && (
+          {(state.viewState === "editing" || state.viewState === "generating") && (
             <EditingView
-              transcript={transcript} isGenerating={viewState === "generating"}
-              onTranscriptChange={setTranscript}
-              onReRecord={() => { setViewState("recording"); setTranscript(""); }}
-              onGenerate={handleGenerateReport}
+              transcript={state.transcript} isGenerating={state.viewState === "generating"}
+              onTranscriptChange={state.setTranscript}
+              onReRecord={() => { state.setViewState("recording"); state.setTranscript(""); }}
+              onGenerate={state.handleGenerateReport}
             />
           )}
-          {(error || recorderError) && (
-            <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error || recorderError}</div>
+          {(state.error || state.recorder.error) && (
+            <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{state.error || state.recorder.error}</div>
           )}
         </div>
       </div>

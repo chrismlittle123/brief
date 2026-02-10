@@ -16,8 +16,8 @@ max-warnings = 0
 # Code quality limits
 "max-depth" = { severity = "error", max = 4 }
 "max-params" = { severity = "error", max = 4 }
-"max-lines-per-function" = { severity = "error", max = 100 }
-"max-lines" = { severity = "error", max = 500 }
+"max-lines-per-function" = { severity = "error", max = 50 }
+"max-lines" = { severity = "error", max = 400 }
 "complexity" = "error"
 "no-console" = { severity = "error", allow = ["error", "warn"] }
 

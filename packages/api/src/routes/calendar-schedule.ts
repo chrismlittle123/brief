@@ -3,7 +3,7 @@ import { scheduleReminder } from "../lib/calendar.js";
 
 export const calendarScheduleRoute = defineRoute({
   method: "POST",
-  url: "/calendar/schedule-reminder",
+  url: "/v1/calendar/schedule-reminder",
   auth: "public",
   tags: ["Calendar"],
   summary: "Schedule a calendar reminder for the next Friday",
@@ -22,7 +22,7 @@ export const calendarScheduleRoute = defineRoute({
     const app = request.server;
     const { userId } = await app.requireClerkAuth(request, request.raw as never);
 
-    const result = await scheduleReminder(userId, app.clerkClient);
+    const result = await scheduleReminder(userId, app.clerkClient, request.log);
 
     return {
       success: true,

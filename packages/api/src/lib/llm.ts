@@ -1,15 +1,17 @@
-interface CompletionRequest {
+import { AppError } from "@palindrom/fastify-api";
+
+type CompletionRequest = {
   model: string;
   messages: Array<{ role: string; content: string }>;
   fallbacks?: string[];
   max_retries?: number;
   timeout?: number;
-}
+};
 
-interface CompletionResponse {
+type CompletionResponse = {
   content: string;
   usage: Record<string, unknown>;
-}
+};
 
 export class LLMClient {
   private baseUrl: string;
@@ -27,7 +29,7 @@ export class LLMClient {
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(`LLM gateway error (${response.status}): ${body}`);
+      throw AppError.internal(`LLM gateway error (${response.status}): ${body}`);
     }
 
     return (await response.json()) as CompletionResponse;

@@ -1,5 +1,5 @@
 // API calls go to Next.js API routes (same origin)
-const API_URL = "/api";
+const API_URL = "/api/v1";
 
 export async function transcribeAudio(audioBlob: Blob): Promise<string> {
   const formData = new FormData();
@@ -19,7 +19,7 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
   return data.text;
 }
 
-export interface Report {
+export type Report = {
   tldr: string;
   thisWeek: string[];
   challenges: string[];
@@ -28,8 +28,8 @@ export interface Report {
   dependencies: string;
   supportRequired: string;
   vibe: string;
-  status: "On Track" | "At Risk" | "Blocked";
-}
+  status: "ON_TRACK" | "AT_RISK" | "BLOCKED";
+};
 
 export async function generateReport(
   responses: Record<string, string>

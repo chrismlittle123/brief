@@ -2,7 +2,7 @@ import { defineRoute, z, AppError } from "@palindrom/fastify-api";
 import { getNotionApiKey, getNotionDatabaseId } from "../lib/secrets.js";
 import { reportSchema } from "../lib/schemas.js";
 
-interface ReportData {
+type ReportData = {
   tldr: string;
   thisWeek: string[];
   nextWeek: string[];
@@ -12,7 +12,7 @@ interface ReportData {
   supportRequired?: string;
   vibe?: string;
   status: string;
-}
+};
 
 function textBlock(type: string, content: string): Record<string, unknown> {
   return {
@@ -84,7 +84,7 @@ function buildProperties(
         },
       ],
     },
-    Status: { select: { name: report.status } },
+    Status: { select: { name: report.status === "ON_TRACK" ? "On Track" : report.status === "AT_RISK" ? "At Risk" : "Blocked" } },
     "Week Of": { date: { start: weekOfDate } },
     "Submitted At": { date: { start: now.toISOString() } },
   };
@@ -96,9 +96,40 @@ function buildProperties(
   return properties;
 }
 
+async function createNotionPage(report: ReportData, userEmail?: string) {
+  const now = new Date();
+
+  const response = await fetch("https://api.notion.com/v1/pages", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getNotionApiKey()}`,
+      "Notion-Version": "2022-06-28",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      parent: { database_id: getNotionDatabaseId() },
+      properties: buildProperties(report, now, userEmail),
+      children: buildChildren(report),
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json()) as { message?: string };
+    throw AppError.internal(errorData.message || `Notion API error: ${response.status}`);
+  }
+
+  const data = (await response.json()) as { id: string };
+
+  return {
+    success: true as const,
+    pageId: data.id,
+    url: `https://notion.so/${data.id.replace(/-/g, "")}`,
+  };
+}
+
 export const saveToNotionRoute = defineRoute({
   method: "POST",
-  url: "/save-to-notion",
+  url: "/v1/save-to-notion",
   auth: "public",
   tags: ["Notion"],
   summary: "Save a report to Notion",
@@ -116,51 +147,14 @@ export const saveToNotionRoute = defineRoute({
     const app = request.server;
     const { userId } = await app.requireClerkAuth(request, request.raw as never);
 
-    // Get user email from Clerk
     const user = await app.clerkClient.users.getUser(userId);
     const userEmail = user.emailAddresses[0]?.emailAddress;
-
     const { report } = request.body;
 
-    if (
-      !report.tldr ||
-      !Array.isArray(report.thisWeek) ||
-      !Array.isArray(report.nextWeek)
-    ) {
-      throw AppError.badRequest(
-        "Report must include 'tldr', 'thisWeek', and 'nextWeek'"
-      );
+    if (!report.tldr || !Array.isArray(report.thisWeek) || !Array.isArray(report.nextWeek)) {
+      throw AppError.badRequest("Report must include 'tldr', 'thisWeek', and 'nextWeek'");
     }
 
-    const now = new Date();
-
-    const response = await fetch("https://api.notion.com/v1/pages", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${getNotionApiKey()}`,
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        parent: { database_id: getNotionDatabaseId() },
-        properties: buildProperties(report, now, userEmail),
-        children: buildChildren(report),
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = (await response.json()) as { message?: string };
-      throw AppError.internal(
-        errorData.message || `Notion API error: ${response.status}`
-      );
-    }
-
-    const data = (await response.json()) as { id: string };
-
-    return {
-      success: true,
-      pageId: data.id,
-      url: `https://notion.so/${data.id.replace(/-/g, "")}`,
-    };
+    return createNotionPage(report, userEmail);
   },
 });

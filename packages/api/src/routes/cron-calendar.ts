@@ -14,7 +14,7 @@ const resultSchema = z.object({
 
 export const cronCalendarRoute = defineRoute({
   method: "GET",
-  url: "/cron/calendar-reminders",
+  url: "/v1/cron/calendar-reminders",
   auth: "public",
   tags: ["Cron"],
   summary: "Schedule calendar reminders for all users (cron job)",
@@ -46,10 +46,10 @@ export const cronCalendarRoute = defineRoute({
     for (const user of users) {
       const email = user.emailAddresses[0]?.emailAddress ?? "unknown";
       try {
-        const calendar = await scheduleReminder(user.id, clerk);
+        const calendar = await scheduleReminder(user.id, clerk, request.log);
         results.push({ userId: user.id, email, calendar });
       } catch (error) {
-        console.error(`Calendar scheduling failed for ${email}:`, error);
+        request.log.error({ userId: user.id, error }, "Calendar scheduling failed");
         results.push({
           userId: user.id,
           email,
@@ -61,9 +61,7 @@ export const cronCalendarRoute = defineRoute({
     const scheduled = results.filter((r) => r.calendar.scheduled).length;
     const skipped = results.length - scheduled;
 
-    console.warn(
-      `[cron/calendar-reminders] Processed ${results.length} users: ${scheduled} scheduled, ${skipped} skipped`
-    );
+    request.log.info({ processed: results.length, scheduled, skipped }, "Calendar reminders processed");
 
     return {
       success: true,

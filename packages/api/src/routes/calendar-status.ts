@@ -7,7 +7,7 @@ import {
 
 export const calendarStatusRoute = defineRoute({
   method: "GET",
-  url: "/calendar/status",
+  url: "/v1/calendar/status",
   auth: "public",
   tags: ["Calendar"],
   summary: "Check if a calendar reminder is scheduled",
@@ -30,7 +30,7 @@ export const calendarStatusRoute = defineRoute({
     }
 
     const fridayDate = getNextFriday();
-    const existing = await hasExistingReminder(accessToken, fridayDate);
+    const existing = await hasExistingReminder(accessToken, fridayDate, request.log);
 
     return {
       scheduled: existing.exists,

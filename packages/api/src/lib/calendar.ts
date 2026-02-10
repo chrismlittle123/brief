@@ -1,4 +1,5 @@
 import type { ClerkClient } from "@clerk/backend";
+import type { FastifyBaseLogger } from "fastify";
 
 const EVENT_TITLE = "Brief - Weekly Update";
 const EVENT_DESCRIPTION =
@@ -9,12 +10,12 @@ const DEFAULT_HOUR_NO_MEETINGS = 12;
 const DAY_START_HOUR = 0;
 const DAY_END_HOUR = 23;
 
-export interface CalendarResult {
+export type CalendarResult = {
   scheduled: boolean;
   eventId?: string;
   startTime?: string;
   reason?: string;
-}
+};
 
 export async function getGoogleAccessToken(
   userId: string,
@@ -82,19 +83,45 @@ function toRFC3339(date: Date, hours: number, minutes: number): string {
   return utcDate.toISOString();
 }
 
-interface BusyInterval {
+type BusyInterval = {
   start: string;
   end: string;
+};
+
+function pickSlotStart(busyIntervals: BusyInterval[]): { hour: number; min: number } {
+  if (busyIntervals.length === 0) {
+    return { hour: DEFAULT_HOUR_NO_MEETINGS, min: 0 };
+  }
+
+  const latestEnd = busyIntervals.reduce((latest, interval) => {
+    const end = new Date(interval.end).getTime();
+    return end > latest ? end : latest;
+  }, 0);
+
+  const slotStart = new Date(latestEnd + SLOT_DURATION_MINUTES * 60 * 1000);
+
+  const londonParts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIMEZONE,
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  }).formatToParts(slotStart);
+
+  const hourPart = londonParts.find((p) => p.type === "hour");
+  const minutePart = londonParts.find((p) => p.type === "minute");
+  return {
+    hour: parseInt(hourPart?.value ?? "0", 10),
+    min: parseInt(minutePart?.value ?? "0", 10),
+  };
 }
 
-async function findSlotAfterLastMeeting(
+async function fetchFreeBusy(
   accessToken: string,
-  fridayDate: Date
-): Promise<{ start: string; end: string } | null> {
-  const dayStart = toRFC3339(fridayDate, DAY_START_HOUR, 0);
-  const dayEnd = toRFC3339(fridayDate, DAY_END_HOUR, 59);
-
-  const freeBusyResponse = await fetch(
+  dayStart: string,
+  dayEnd: string,
+  log: FastifyBaseLogger
+): Promise<BusyInterval[] | null> {
+  const response = await fetch(
     "https://www.googleapis.com/calendar/v3/freeBusy",
     {
       method: "POST",
@@ -111,54 +138,35 @@ async function findSlotAfterLastMeeting(
     }
   );
 
-  if (!freeBusyResponse.ok) {
-    console.error(
-      "FreeBusy API error:",
-      freeBusyResponse.status,
-      await freeBusyResponse.text()
-    );
+  if (!response.ok) {
+    log.error({ status: response.status }, "FreeBusy API error");
     return null;
   }
 
-  const freeBusyData = (await freeBusyResponse.json()) as {
+  const data = (await response.json()) as {
     calendars?: { primary?: { busy?: BusyInterval[] } };
   };
-  const busyIntervals: BusyInterval[] =
-    freeBusyData.calendars?.primary?.busy ?? [];
+  return data.calendars?.primary?.busy ?? [];
+}
 
-  let slotStartHour: number;
-  let slotStartMin: number;
+async function findSlotAfterLastMeeting(
+  accessToken: string,
+  fridayDate: Date,
+  log: FastifyBaseLogger
+): Promise<{ start: string; end: string } | null> {
+  const dayStart = toRFC3339(fridayDate, DAY_START_HOUR, 0);
+  const dayEnd = toRFC3339(fridayDate, DAY_END_HOUR, 59);
 
-  if (busyIntervals.length === 0) {
-    slotStartHour = DEFAULT_HOUR_NO_MEETINGS;
-    slotStartMin = 0;
-  } else {
-    const latestEnd = busyIntervals.reduce((latest, interval) => {
-      const end = new Date(interval.end).getTime();
-      return end > latest ? end : latest;
-    }, 0);
+  const busyIntervals = await fetchFreeBusy(accessToken, dayStart, dayEnd, log);
+  if (!busyIntervals) return null;
 
-    const slotStart = new Date(latestEnd + SLOT_DURATION_MINUTES * 60 * 1000);
+  const { hour, min } = pickSlotStart(busyIntervals);
 
-    const londonParts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: TIMEZONE,
-      hour: "numeric",
-      minute: "numeric",
-      hour12: false,
-    }).formatToParts(slotStart);
-
-    const hourPart = londonParts.find((p) => p.type === "hour");
-    const minutePart = londonParts.find((p) => p.type === "minute");
-    slotStartHour = parseInt(hourPart?.value ?? "0", 10);
-    slotStartMin = parseInt(minutePart?.value ?? "0", 10);
-  }
-
-  const slotEndMinutes =
-    slotStartHour * 60 + slotStartMin + SLOT_DURATION_MINUTES;
+  const slotEndMinutes = hour * 60 + min + SLOT_DURATION_MINUTES;
   const slotEndHour = Math.floor(slotEndMinutes / 60);
   const slotEndMin = slotEndMinutes % 60;
 
-  const start = toLondonDatetime(fridayDate, slotStartHour, slotStartMin);
+  const start = toLondonDatetime(fridayDate, hour, min);
   const end = toLondonDatetime(fridayDate, slotEndHour, slotEndMin);
 
   return { start, end };
@@ -166,7 +174,8 @@ async function findSlotAfterLastMeeting(
 
 export async function hasExistingReminder(
   accessToken: string,
-  fridayDate: Date
+  fridayDate: Date,
+  log: FastifyBaseLogger
 ): Promise<{ exists: boolean; eventId?: string; startTime?: string }> {
   const dayStart = toRFC3339(fridayDate, 0, 0);
   const dayEnd = toRFC3339(fridayDate, 23, 59);
@@ -186,11 +195,7 @@ export async function hasExistingReminder(
   );
 
   if (!response.ok) {
-    console.error(
-      "Events list error:",
-      response.status,
-      await response.text()
-    );
+    log.error({ status: response.status }, "Events list error");
     return { exists: false };
   }
 
@@ -218,7 +223,8 @@ export async function hasExistingReminder(
 
 async function createReminderEvent(
   accessToken: string,
-  slot: { start: string; end: string }
+  slot: { start: string; end: string },
+  log: FastifyBaseLogger
 ): Promise<{ eventId: string; startTime: string } | null> {
   const response = await fetch(
     "https://www.googleapis.com/calendar/v3/calendars/primary/events",
@@ -242,11 +248,7 @@ async function createReminderEvent(
   );
 
   if (!response.ok) {
-    console.error(
-      "Create event error:",
-      response.status,
-      await response.text()
-    );
+    log.error({ status: response.status }, "Create event error");
     return null;
   }
 
@@ -262,7 +264,8 @@ async function createReminderEvent(
 
 export async function scheduleReminder(
   userId: string,
-  clerk: ClerkClient
+  clerk: ClerkClient,
+  log: FastifyBaseLogger
 ): Promise<CalendarResult> {
   const accessToken = await getGoogleAccessToken(userId, clerk);
   if (!accessToken) {
@@ -271,7 +274,7 @@ export async function scheduleReminder(
 
   const fridayDate = getNextFriday();
 
-  const existing = await hasExistingReminder(accessToken, fridayDate);
+  const existing = await hasExistingReminder(accessToken, fridayDate, log);
   if (existing.exists) {
     return {
       scheduled: true,
@@ -280,12 +283,12 @@ export async function scheduleReminder(
     };
   }
 
-  const slot = await findSlotAfterLastMeeting(accessToken, fridayDate);
+  const slot = await findSlotAfterLastMeeting(accessToken, fridayDate, log);
   if (!slot) {
     return { scheduled: false, reason: "calendar_query_failed" };
   }
 
-  const result = await createReminderEvent(accessToken, slot);
+  const result = await createReminderEvent(accessToken, slot, log);
   if (!result) {
     return { scheduled: false, reason: "create_failed" };
   }
