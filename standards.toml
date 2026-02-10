@@ -15,8 +15,7 @@ enabled = false
 
 [process.hooks]
 enabled = true
-tool = "husky"
-hooks = ["commit-msg", "pre-push"]
+require_husky = true
 
 [process.ci]
 enabled = true
