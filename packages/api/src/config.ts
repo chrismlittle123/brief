@@ -34,6 +34,8 @@ export function loadConfig(): AppConfig {
       path: "/docs",
     },
     clerkSecretKey: requireEnv("CLERK_SECRET_KEY"),
-    clerkPublishableKey: requireEnv("CLERK_PUBLISHABLE_KEY"),
+    clerkPublishableKey:
+      process.env["CLERK_PUBLISHABLE_KEY"] ??
+      requireEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"),
   };
 }
