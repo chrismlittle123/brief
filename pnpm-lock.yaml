@@ -21,17 +21,14 @@ importers:
   infra:
     dependencies:
       '@palindrom-ai/infra':
-        specifier: link:../../infra
-        version: link:../../infra
+        specifier: github:chrismlittle123/infra
+        version: https://codeload.github.com/chrismlittle123/infra/tar.gz/5ca2a144324f7a08b2f1f18ce18dfbedbadfe2fc(typescript@5.9.3)
       '@pulumi/gcp':
         specifier: ^8.0.0
         version: 8.41.1(typescript@5.9.3)
       '@pulumi/pulumi':
         specifier: ^3.0.0
         version: 3.217.1(typescript@5.9.3)
-      dotenv:
-        specifier: ^16.0.0
-        version: 16.6.1
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -1668,6 +1665,10 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
 
+  '@palindrom-ai/infra@https://codeload.github.com/chrismlittle123/infra/tar.gz/5ca2a144324f7a08b2f1f18ce18dfbedbadfe2fc':
+    resolution: {tarball: https://codeload.github.com/chrismlittle123/infra/tar.gz/5ca2a144324f7a08b2f1f18ce18dfbedbadfe2fc}
+    version: 0.0.1
+
   '@palindrom/fastify-api@https://codeload.github.com/chrismlittle123/fastify-api/tar.gz/84f726e2687246b64a6f7040d462b5d309c6a0bc':
     resolution: {tarball: https://codeload.github.com/chrismlittle123/fastify-api/tar.gz/84f726e2687246b64a6f7040d462b5d309c6a0bc}
     version: 0.1.0
@@ -1710,8 +1711,14 @@ packages:
   '@protobufjs/utf8@1.1.0':
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
 
+  '@pulumi/aws@6.83.2':
+    resolution: {integrity: sha512-FggAx+LxANUwD9KPlKy4U8uvVjhR8B6vw+doDq7zP3bRWz7CCCd4sXZT2k/ou0erZN78MTzOXYa1nsN0TBEDJg==}
+
   '@pulumi/gcp@8.41.1':
     resolution: {integrity: sha512-cEuhyrys+h2HMMdAKIXT6QDjjMzQRDUDV9CytIw146lpXp2bACUr4NwMefX7LgzUW+ebs7t7YClU/sNbI3OaDw==}
+
+  '@pulumi/gcp@9.11.0':
+    resolution: {integrity: sha512-PMjKbpeKTeNIAzZf8nCF2MPlUinMtGfRUaG2E6ktAgiP7CNApebQ1+ThifExCYwJ3Uer9j7FA0ukd2x9yFoSmA==}
 
   '@pulumi/pulumi@3.217.1':
     resolution: {integrity: sha512-D2ywcnzADLE8oNmRLD7Fh+RnZ/+/yID2c/eG3B8LxP7JuHL6MBS29qR46NMa7j5Jg0viwU0D7q+F4OxWKHPoqA==}
@@ -1724,6 +1731,12 @@ packages:
         optional: true
       typescript:
         optional: true
+
+  '@pulumi/random@4.19.1':
+    resolution: {integrity: sha512-gDotQyxtl+pcJb4oaGfbi6PsK8OtzjBmF1D8PYLvr13kCup98KTIIv/8wF2xbgbFf7ljJn3EblADxZ0u8AC/Dg==}
+
+  '@pulumiverse/vercel@1.15.0':
+    resolution: {integrity: sha512-BtD2PBbsIj9z7JZVy1/LDAzfuJIB+IOxdz0a3hB6zl/7OoNLfJ3zZxbIyZDyqC2GVfl3T0cBER4r8MPGW5fo6w==}
 
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
@@ -2834,10 +2847,6 @@ packages:
 
   dot-case@3.0.4:
     resolution: {integrity: sha512-Kv5nKlh6yRrdrGvxeJ2e5y2eRUpkUosIW4A2AS38zwSz27zu7ufDwQPi5Jhs3XAlGNetl3bmnGhQsMtkKJnj3w==}
-
-  dotenv@16.6.1:
-    resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
-    engines: {node: '>=12'}
 
   drizzle-orm@0.38.4:
     resolution: {integrity: sha512-s7/5BpLKO+WJRHspvpqTydxFob8i1vo2rEx4pY6TGY7QSMuUfWUuzaY0DIpXCkgHOo37BaFC+SJQb99dDUXT3Q==}
@@ -4102,6 +4111,11 @@ packages:
   mime-types@3.0.2:
     resolution: {integrity: sha512-Lbgzdk0h4juoQ9fCKXW4by0UJqj+nOOrI9MJ1sSj4nI8aI2eo1qmvQEie4VD1glsS250n15LsWsYtCugiStS5A==}
     engines: {node: '>=18'}
+
+  mime@2.6.0:
+    resolution: {integrity: sha512-USPkMeET31rOMiarsBNIHZKLGgvKc/LrjofAnBlOttf5ajRvqiRA8QsenbcooctK6d6Ts6aqZXBA+XbkKthiQg==}
+    engines: {node: '>=4.0.0'}
+    hasBin: true
 
   mimic-fn@2.1.0:
     resolution: {integrity: sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==}
@@ -8003,6 +8017,17 @@ snapshots:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.5.0(@opentelemetry/api@1.9.0)
 
+  '@palindrom-ai/infra@https://codeload.github.com/chrismlittle123/infra/tar.gz/5ca2a144324f7a08b2f1f18ce18dfbedbadfe2fc(typescript@5.9.3)':
+    dependencies:
+      '@pulumi/aws': 6.83.2(typescript@5.9.3)
+      '@pulumi/gcp': 9.11.0(typescript@5.9.3)
+      '@pulumi/random': 4.19.1(typescript@5.9.3)
+      '@pulumiverse/vercel': 1.15.0(typescript@5.9.3)
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+      - typescript
+
   '@palindrom/fastify-api@https://codeload.github.com/chrismlittle123/fastify-api/tar.gz/84f726e2687246b64a6f7040d462b5d309c6a0bc(@opentelemetry/core@2.5.0(@opentelemetry/api@1.9.0))(@types/pg@8.15.6)(@types/react@19.2.10)(encoding@0.1.13)(react@19.2.3)':
     dependencies:
       '@fastify/jwt': 9.1.0
@@ -8087,7 +8112,26 @@ snapshots:
 
   '@protobufjs/utf8@1.1.0': {}
 
+  '@pulumi/aws@6.83.2(typescript@5.9.3)':
+    dependencies:
+      '@pulumi/pulumi': 3.217.1(typescript@5.9.3)
+      mime: 2.6.0
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+      - typescript
+
   '@pulumi/gcp@8.41.1(typescript@5.9.3)':
+    dependencies:
+      '@npmcli/package-json': 6.2.0
+      '@pulumi/pulumi': 3.217.1(typescript@5.9.3)
+      '@types/express': 4.17.25
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+      - typescript
+
+  '@pulumi/gcp@9.11.0(typescript@5.9.3)':
     dependencies:
       '@npmcli/package-json': 6.2.0
       '@pulumi/pulumi': 3.217.1(typescript@5.9.3)
@@ -8131,6 +8175,22 @@ snapshots:
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
+
+  '@pulumi/random@4.19.1(typescript@5.9.3)':
+    dependencies:
+      '@pulumi/pulumi': 3.217.1(typescript@5.9.3)
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+      - typescript
+
+  '@pulumiverse/vercel@1.15.0(typescript@5.9.3)':
+    dependencies:
+      '@pulumi/pulumi': 3.217.1(typescript@5.9.3)
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+      - typescript
 
   '@rtsao/scc@1.1.0': {}
 
@@ -9399,8 +9459,6 @@ snapshots:
     dependencies:
       no-case: 3.0.4
       tslib: 2.8.1
-
-  dotenv@16.6.1: {}
 
   drizzle-orm@0.38.4(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@types/react@19.2.10)(postgres@3.4.8)(react@19.2.3):
     optionalDependencies:
@@ -10858,6 +10916,8 @@ snapshots:
   mime-types@3.0.2:
     dependencies:
       mime-db: 1.54.0
+
+  mime@2.6.0: {}
 
   mimic-fn@2.1.0: {}
 
