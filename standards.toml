@@ -13,9 +13,10 @@ enabled = false
 [code.unused.knip]
 enabled = false
 
-# TODO: Set up husky pre-push and commit-msg hooks
 [process.hooks]
-enabled = false
+enabled = true
+tool = "husky"
+hooks = ["commit-msg", "pre-push"]
 
 [process.ci]
 enabled = true

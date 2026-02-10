@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "pnpm --filter frontend dev",
     "build": "pnpm --filter frontend build",
-    "lint": "pnpm --filter frontend lint"
+    "typecheck": "pnpm --filter frontend typecheck",
+    "lint": "pnpm --filter frontend lint",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@standards-kit/conform": "^0.3.2",
+    "husky": "^9.1.7",
     "typescript": "^5.0.0"
   }
 }
