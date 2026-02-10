@@ -58,6 +58,17 @@ allSecrets.forEach((secret, index) => {
   });
 });
 
+// Grant secret accessor role to Cloud Run service agent (required for mounting secrets at revision creation)
+const projectNumber = "10492061315";
+const cloudRunAgent = `serviceAccount:service-${projectNumber}@serverless-robot-prod.iam.gserviceaccount.com`;
+allSecrets.forEach((secret, index) => {
+  new gcp.secretmanager.SecretIamMember(`api-agent-secret-access-${index}`, {
+    secretId: secret.secretArn,
+    role: "roles/secretmanager.secretAccessor",
+    member: cloudRunAgent,
+  });
+});
+
 // Cloud Run service (logical name: "api")
 const api = new gcp.cloudrunv2.Service("api", {
   name: serviceName,
