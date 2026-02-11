@@ -1,0 +1,77 @@
+name: Setup RDS Schema
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-2
+
+jobs:
+  setup:
+    name: Open Security Group and Push Schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::215629979895:role/github-actions-pulumi
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/10492061315/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions@christopher-little-dev.iam.gserviceaccount.com
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Open security group for PostgreSQL
+        run: |
+          # Get the VPC security group for the RDS instance
+          SG_ID=$(aws rds describe-db-instances \
+            --db-instance-identifier brief-dev \
+            --query 'DBInstances[0].VpcSecurityGroups[0].VpcSecurityGroupId' \
+            --output text)
+          echo "Security group: $SG_ID"
+
+          # Check if rule already exists
+          EXISTING=$(aws ec2 describe-security-groups \
+            --group-ids "$SG_ID" \
+            --query "SecurityGroups[0].IpPermissions[?FromPort==\`5432\` && IpRanges[?CidrIp==\`0.0.0.0/0\`]]" \
+            --output text)
+
+          if [ -z "$EXISTING" ]; then
+            aws ec2 authorize-security-group-ingress \
+              --group-id "$SG_ID" \
+              --protocol tcp \
+              --port 5432 \
+              --cidr 0.0.0.0/0
+            echo "Opened port 5432 to all IPs (dev only)"
+          else
+            echo "Port 5432 already open"
+          fi
+
+      - name: Push Drizzle schema
+        working-directory: packages/api
+        run: |
+          DATABASE_URL=$(gcloud secrets versions access latest \
+            --secret=brief-database-url-secret-dev \
+            --project=christopher-little-dev)
+          DATABASE_URL="$DATABASE_URL" npx drizzle-kit push --force
+          echo "Schema pushed successfully"
