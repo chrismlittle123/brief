@@ -19,6 +19,10 @@ const notionDatabaseId = createSecret("notion-database-id");
 const slackWebhookUrl = createSecret("slack-webhook-url");
 const clerkSecretKey = createSecret("clerk-secret-key");
 const clerkPublishableKey = createSecret("clerk-publishable-key");
+const livekitApiKey = createSecret("livekit-api-key");
+const livekitApiSecret = createSecret("livekit-api-secret");
+const livekitUrl = createSecret("livekit-url");
+const deepgramApiKey = createSecret("deepgram-api-key");
 
 const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
   "llm-gateway-url": llmGatewayUrl,
@@ -28,6 +32,10 @@ const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
   "slack-webhook-url": slackWebhookUrl,
   "clerk-secret-key": clerkSecretKey,
   "clerk-publishable-key": clerkPublishableKey,
+  "livekit-api-key": livekitApiKey,
+  "livekit-api-secret": livekitApiSecret,
+  "livekit-url": livekitUrl,
+  "deepgram-api-key": deepgramApiKey,
 };
 
 // --- Artifact Registry ---
@@ -128,6 +136,22 @@ const api = new gcp.cloudrunv2.Service("api", {
           name: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
           valueSource: { secretKeyRef: { secret: clerkPublishableKey.secretName, version: "latest" } },
         },
+        {
+          name: "LIVEKIT_API_KEY",
+          valueSource: { secretKeyRef: { secret: livekitApiKey.secretName, version: "latest" } },
+        },
+        {
+          name: "LIVEKIT_API_SECRET",
+          valueSource: { secretKeyRef: { secret: livekitApiSecret.secretName, version: "latest" } },
+        },
+        {
+          name: "LIVEKIT_URL",
+          valueSource: { secretKeyRef: { secret: livekitUrl.secretName, version: "latest" } },
+        },
+        {
+          name: "DEEPGRAM_API_KEY",
+          valueSource: { secretKeyRef: { secret: deepgramApiKey.secretName, version: "latest" } },
+        },
       ],
     }],
   },
@@ -216,6 +240,10 @@ export const secrets = {
   slackWebhookUrl: slackWebhookUrl.secretName,
   clerkSecretKey: clerkSecretKey.secretName,
   clerkPublishableKey: clerkPublishableKey.secretName,
+  livekitApiKey: livekitApiKey.secretName,
+  livekitApiSecret: livekitApiSecret.secretName,
+  livekitUrl: livekitUrl.secretName,
+  deepgramApiKey: deepgramApiKey.secretName,
 };
 
 export const registryName = registry.name;
