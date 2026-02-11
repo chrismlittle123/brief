@@ -1,5 +1,9 @@
 # TypeScript - Prototype
 # Relaxed checks for Pulumi IaC code
 
+[metadata]
+tier = "prototype"
+project = "brief-infra"
+
 [code.linting.eslint]
 enabled = false  # no eslint config for infra
