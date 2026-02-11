@@ -42,27 +42,6 @@ const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
 
 const db = createDatabase("main", { public: true });
 
-// Read the password back from the secret that createDatabase stored
-const dbPassword = db.passwordSecretArn.apply(secretName =>
-  gcp.secretmanager.getSecretVersion({
-    secret: secretName,
-    version: "latest",
-  })
-);
-
-// Store full DATABASE_URL as a secret for Cloud Run to mount
-const databaseUrlSecret = new gcp.secretmanager.Secret("database-url-secret", {
-  secretId: "brief-database-url-dev",
-  replication: { auto: {} },
-});
-
-new gcp.secretmanager.SecretVersion("database-url-version", {
-  secret: databaseUrlSecret.id,
-  secretData: pulumi.all([db.username, dbPassword, db.host, db.port, db.database]).apply(
-    ([username, pw, host, port, database]) =>
-      `postgresql://${username}:${pw.secretData}@${host}:${port}/${database}?sslmode=require`
-  ),
-});
 
 // --- Artifact Registry ---
 
@@ -105,15 +84,15 @@ for (const [name, secret] of Object.entries(allSecrets)) {
   });
 }
 
-// Grant Cloud Run access to the database URL secret
-new gcp.secretmanager.SecretIamMember("api-secret-access-database-url", {
-  secretId: databaseUrlSecret.id,
+// Grant Cloud Run access to the database password secret
+new gcp.secretmanager.SecretIamMember("api-secret-access-db-password", {
+  secretId: db.passwordSecretArn,
   role: "roles/secretmanager.secretAccessor",
   member,
 });
 
-new gcp.secretmanager.SecretIamMember("api-agent-secret-access-database-url", {
-  secretId: databaseUrlSecret.id,
+new gcp.secretmanager.SecretIamMember("api-agent-secret-access-db-password", {
+  secretId: db.passwordSecretArn,
   role: "roles/secretmanager.secretAccessor",
   member: cloudRunAgent,
 });
@@ -192,8 +171,24 @@ const api = new gcp.cloudrunv2.Service("api", {
           valueSource: { secretKeyRef: { secret: deepgramApiKey.secretName, version: "latest" } },
         },
         {
-          name: "DATABASE_URL",
-          valueSource: { secretKeyRef: { secret: databaseUrlSecret.secretId, version: "latest" } },
+          name: "DB_HOST",
+          value: db.host,
+        },
+        {
+          name: "DB_PORT",
+          value: db.port.apply(p => String(p)),
+        },
+        {
+          name: "DB_NAME",
+          value: db.database,
+        },
+        {
+          name: "DB_USERNAME",
+          value: db.username,
+        },
+        {
+          name: "DB_PASSWORD",
+          valueSource: { secretKeyRef: { secret: db.passwordSecretArn, version: "latest" } },
         },
       ],
     }],
