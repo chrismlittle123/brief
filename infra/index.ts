@@ -20,15 +20,15 @@ const slackWebhookUrl = createSecret("slack-webhook-url");
 const clerkSecretKey = createSecret("clerk-secret-key");
 const clerkPublishableKey = createSecret("clerk-publishable-key");
 
-const allSecrets = [
-  llmGatewayUrl,
-  openaiApiKey,
-  notionApiKey,
-  notionDatabaseId,
-  slackWebhookUrl,
-  clerkSecretKey,
-  clerkPublishableKey,
-];
+const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
+  "llm-gateway-url": llmGatewayUrl,
+  "openai-api-key": openaiApiKey,
+  "notion-api-key": notionApiKey,
+  "notion-database-id": notionDatabaseId,
+  "slack-webhook-url": slackWebhookUrl,
+  "clerk-secret-key": clerkSecretKey,
+  "clerk-publishable-key": clerkPublishableKey,
+};
 
 // --- Artifact Registry ---
 
@@ -50,26 +50,26 @@ const serviceAccount = new gcp.serviceaccount.Account("api-sa", {
   displayName: `Service account for ${serviceName}`,
 });
 
-// Grant secret accessor role to service account (logical names: "api-secret-access-{N}")
+// Grant secret accessor role to service account (stable names: "api-secret-access-{name}")
 const member = pulumi.interpolate`serviceAccount:${serviceAccount.email}`;
-allSecrets.forEach((secret, index) => {
-  new gcp.secretmanager.SecretIamMember(`api-secret-access-${index}`, {
+for (const [name, secret] of Object.entries(allSecrets)) {
+  new gcp.secretmanager.SecretIamMember(`api-secret-access-${name}`, {
     secretId: secret.secretArn,
     role: "roles/secretmanager.secretAccessor",
     member,
   });
-});
+}
 
 // Grant secret accessor role to Cloud Run service agent (required for mounting secrets at revision creation)
 const projectNumber = "10492061315";
 const cloudRunAgent = `serviceAccount:service-${projectNumber}@serverless-robot-prod.iam.gserviceaccount.com`;
-allSecrets.forEach((secret, index) => {
-  new gcp.secretmanager.SecretIamMember(`api-agent-secret-access-${index}`, {
+for (const [name, secret] of Object.entries(allSecrets)) {
+  new gcp.secretmanager.SecretIamMember(`api-agent-secret-access-${name}`, {
     secretId: secret.secretArn,
     role: "roles/secretmanager.secretAccessor",
     member: cloudRunAgent,
   });
-});
+}
 
 // Cloud Run service (logical name: "api")
 const api = new gcp.cloudrunv2.Service("api", {
