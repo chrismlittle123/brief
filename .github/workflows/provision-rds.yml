@@ -1,0 +1,109 @@
+name: Provision RDS Instance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-2
+  GCP_PROJECT: christopher-little-dev
+
+jobs:
+  provision:
+    name: Provision RDS PostgreSQL
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::215629979895:role/github-actions-pulumi
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/10492061315/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions@christopher-little-dev.iam.gserviceaccount.com
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Generate password
+        id: password
+        run: |
+          PASSWORD=$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 24)
+          echo "::add-mask::$PASSWORD"
+          echo "value=$PASSWORD" >> "$GITHUB_OUTPUT"
+
+      - name: Check if RDS instance exists
+        id: check
+        run: |
+          if aws rds describe-db-instances --db-instance-identifier brief-dev 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create RDS instance
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          aws rds create-db-instance \
+            --db-instance-identifier brief-dev \
+            --db-instance-class db.t4g.micro \
+            --engine postgres \
+            --engine-version 16 \
+            --master-username brief \
+            --master-user-password "${{ steps.password.outputs.value }}" \
+            --allocated-storage 20 \
+            --storage-type gp3 \
+            --publicly-accessible \
+            --db-name brief \
+            --backup-retention-period 7 \
+            --no-multi-az \
+            --no-deletion-protection \
+            --tags Key=project,Value=brief Key=environment,Value=dev
+
+      - name: Wait for RDS to be available
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          echo "Waiting for RDS instance to become available (this may take 5-10 minutes)..."
+          aws rds wait db-instance-available --db-instance-identifier brief-dev
+          echo "RDS instance is available"
+        timeout-minutes: 15
+
+      - name: Get RDS endpoint
+        id: rds
+        run: |
+          ENDPOINT=$(aws rds describe-db-instances \
+            --db-instance-identifier brief-dev \
+            --query 'DBInstances[0].Endpoint.Address' \
+            --output text)
+          PORT=$(aws rds describe-db-instances \
+            --db-instance-identifier brief-dev \
+            --query 'DBInstances[0].Endpoint.Port' \
+            --output text)
+          echo "endpoint=$ENDPOINT" >> "$GITHUB_OUTPUT"
+          echo "port=$PORT" >> "$GITHUB_OUTPUT"
+          echo "RDS endpoint: $ENDPOINT:$PORT"
+
+      - name: Set DATABASE_URL secret in GCP
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          DATABASE_URL="postgresql://brief:${{ steps.password.outputs.value }}@${{ steps.rds.outputs.endpoint }}:${{ steps.rds.outputs.port }}/brief?sslmode=require"
+          echo -n "$DATABASE_URL" | gcloud secrets versions add "brief-database-url-secret-dev" \
+            --data-file=- --project=${{ env.GCP_PROJECT }}
+          echo "DATABASE_URL secret set successfully"
+
+      - name: Summary
+        run: |
+          echo "## RDS Instance" >> $GITHUB_STEP_SUMMARY
+          echo "- **Identifier:** brief-dev" >> $GITHUB_STEP_SUMMARY
+          echo "- **Endpoint:** ${{ steps.rds.outputs.endpoint }}:${{ steps.rds.outputs.port }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Engine:** PostgreSQL 16" >> $GITHUB_STEP_SUMMARY
+          echo "- **Class:** db.t4g.micro" >> $GITHUB_STEP_SUMMARY
+          echo "- **Database:** brief" >> $GITHUB_STEP_SUMMARY
+          echo "- **Username:** brief" >> $GITHUB_STEP_SUMMARY
+          echo "- **GCP Secret:** brief-database-url-secret-dev (version updated)" >> $GITHUB_STEP_SUMMARY
