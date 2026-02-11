@@ -8,6 +8,10 @@ import { shameBotGetRoute, shameBotPostRoute } from "./shame-bot.js";
 import { calendarStatusRoute } from "./calendar-status.js";
 import { calendarScheduleRoute } from "./calendar-schedule.js";
 import { cronCalendarRoute } from "./cron-calendar.js";
+import { sessionCreateRoute } from "./session-create.js";
+import { sessionTokenRoute } from "./session-token.js";
+import { sessionCompleteRoute } from "./session-complete.js";
+import { sessionGetRoute } from "./session-get.js";
 
 const routes: RouteDefinition[] = [
   transcribeRoute,
@@ -19,6 +23,10 @@ const routes: RouteDefinition[] = [
   calendarStatusRoute,
   calendarScheduleRoute,
   cronCalendarRoute,
+  sessionCreateRoute,
+  sessionTokenRoute,
+  sessionCompleteRoute,
+  sessionGetRoute,
 ];
 
 export function registerAllRoutes(

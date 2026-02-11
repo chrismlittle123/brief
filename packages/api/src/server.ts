@@ -11,6 +11,7 @@ async function main() {
   const app = await createApp({
     name: config.name,
     server: { port: config.port, host: config.host },
+    db: { connectionString: config.databaseUrl },
     docs: config.docs,
     logging: config.logging,
   });

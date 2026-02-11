@@ -8,6 +8,7 @@ type AppConfig = {
   docs: { title: string; description: string; version: string; path: string };
   clerkSecretKey: string;
   clerkPublishableKey: string;
+  databaseUrl: string;
 };
 
 function requireEnv(name: string): string {
@@ -37,5 +38,6 @@ export function loadConfig(): AppConfig {
     clerkPublishableKey:
       process.env["CLERK_PUBLISHABLE_KEY"] ??
       requireEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"),
+    databaseUrl: requireEnv("DATABASE_URL"),
   };
 }

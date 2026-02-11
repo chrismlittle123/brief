@@ -8,6 +8,9 @@ process.env.LLM_GATEWAY_URL = "http://llm-gateway.test";
 process.env.NOTION_API_KEY = "test-notion-key";
 process.env.NOTION_DATABASE_ID = "test-db-id";
 process.env.SLACK_WEBHOOK_URL = "http://slack.test/webhook";
+process.env.LIVEKIT_API_KEY = "test-livekit-key";
+process.env.LIVEKIT_API_SECRET = "test-livekit-secret-that-is-long-enough";
+process.env.LIVEKIT_URL = "wss://test.livekit.cloud";
 
 export const MOCK_REPORT = {
   tldr: "Shipped feature X. On track for release.",
@@ -41,6 +44,29 @@ function createMockClerk() {
   };
 }
 
+export function createMockDb() {
+  const chainable = () => {
+    const chain: Record<string, ReturnType<typeof vi.fn>> = {};
+    chain.values = vi.fn().mockReturnValue(chain);
+    chain.from = vi.fn().mockReturnValue(chain);
+    chain.where = vi.fn().mockReturnValue(chain);
+    chain.set = vi.fn().mockReturnValue(chain);
+    chain.limit = vi.fn().mockResolvedValue([]);
+    return chain;
+  };
+
+  return {
+    drizzle: {
+      insert: vi.fn().mockReturnValue(chainable()),
+      select: vi.fn().mockReturnValue(chainable()),
+      update: vi.fn().mockReturnValue(chainable()),
+      delete: vi.fn().mockReturnValue(chainable()),
+    },
+    ping: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
 export async function buildApp(...routes: RouteDefinition[]) {
   const app = await createApp({
     name: "test-api",
@@ -59,6 +85,29 @@ export async function buildApp(...routes: RouteDefinition[]) {
 
   await app.ready();
   return app;
+}
+
+export async function buildAppWithDb(...routes: RouteDefinition[]) {
+  const app = await createApp({
+    name: "test-api",
+    server: { port: 0, host: "127.0.0.1" },
+    docs: { title: "Test", description: "Test", version: "1.0.0", path: "/docs" },
+    logging: { level: "fatal", pretty: false },
+  });
+
+  await app.register(multipart, { limits: { fileSize: 25 * 1024 * 1024 } });
+  app.decorate("clerkClient", createMockClerk());
+  app.decorate("requireClerkAuth", vi.fn().mockResolvedValue({ userId: "user-123" }));
+
+  const mockDb = createMockDb();
+  app.decorate("db", mockDb);
+
+  for (const route of routes) {
+    registerRoute(app, route);
+  }
+
+  await app.ready();
+  return { app, mockDb };
 }
 
 export function jsonResponse(body: unknown, status = 200) {
