@@ -1,6 +1,6 @@
 import * as gcp from "@pulumi/gcp";
 import * as pulumi from "@pulumi/pulumi";
-import { defineConfig, createSecret } from "@palindrom-ai/infra";
+import { defineConfig, createSecret } from "@progression-labs/infra";
 
 // Configure for GCP dev environment
 defineConfig({
@@ -93,7 +93,7 @@ const api = new gcp.cloudrunv2.Service("api", {
     labels: {
       environment: "dev",
       project: "brief",
-      "managed-by": "palindrom-infra",
+      "managed-by": "progression-labs-infra",
     },
     maxInstanceRequestConcurrency: 80,
     scaling: {

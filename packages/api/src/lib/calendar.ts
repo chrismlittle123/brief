@@ -3,7 +3,7 @@ import type { FastifyBaseLogger } from "fastify";
 
 const EVENT_TITLE = "Brief - Weekly Update";
 const EVENT_DESCRIPTION =
-  "Time to fill in your weekly Brief update.\n\nOpen Brief: https://brief.palindrom.ai/checkin";
+  "Time to fill in your weekly Brief update.\n\nOpen Brief: https://brief.progression-labs.ai/checkin";
 const TIMEZONE = "Europe/London";
 const SLOT_DURATION_MINUTES = 15;
 const DEFAULT_HOUR_NO_MEETINGS = 12;

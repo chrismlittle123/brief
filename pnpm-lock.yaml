@@ -20,7 +20,7 @@ importers:
 
   infra:
     dependencies:
-      '@palindrom-ai/infra':
+      '@progression-labs/infra':
         specifier: github:chrismlittle123/infra
         version: https://codeload.github.com/chrismlittle123/infra/tar.gz/d75ef3ad514b133ed4ebd27b77ec7fb73e5bf387(typescript@5.9.3)
       '@pulumi/gcp':
@@ -51,7 +51,7 @@ importers:
       '@fastify/multipart':
         specifier: ^9.0.0
         version: 9.4.0
-      '@palindrom/fastify-api':
+      '@progression-labs/fastify-api':
         specifier: github:chrismlittle123/fastify-api
         version: https://codeload.github.com/chrismlittle123/fastify-api/tar.gz/03d7e214f45a45a3d751ca3be0d07ae966763249(@opentelemetry/core@2.5.0(@opentelemetry/api@1.9.0))(@types/pg@8.15.6)(@types/react@19.2.13)(encoding@0.1.13)(react@19.2.3)
       drizzle-orm:
@@ -2060,11 +2060,11 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
 
-  '@palindrom-ai/infra@https://codeload.github.com/chrismlittle123/infra/tar.gz/d75ef3ad514b133ed4ebd27b77ec7fb73e5bf387':
+  '@progression-labs/infra@https://codeload.github.com/chrismlittle123/infra/tar.gz/d75ef3ad514b133ed4ebd27b77ec7fb73e5bf387':
     resolution: {tarball: https://codeload.github.com/chrismlittle123/infra/tar.gz/d75ef3ad514b133ed4ebd27b77ec7fb73e5bf387}
     version: 0.0.1
 
-  '@palindrom/fastify-api@https://codeload.github.com/chrismlittle123/fastify-api/tar.gz/03d7e214f45a45a3d751ca3be0d07ae966763249':
+  '@progression-labs/fastify-api@https://codeload.github.com/chrismlittle123/fastify-api/tar.gz/03d7e214f45a45a3d751ca3be0d07ae966763249':
     resolution: {tarball: https://codeload.github.com/chrismlittle123/fastify-api/tar.gz/03d7e214f45a45a3d751ca3be0d07ae966763249}
     version: 0.1.0
     engines: {node: '>=20.0.0'}
@@ -9041,7 +9041,7 @@ snapshots:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.5.0(@opentelemetry/api@1.9.0)
 
-  '@palindrom-ai/infra@https://codeload.github.com/chrismlittle123/infra/tar.gz/d75ef3ad514b133ed4ebd27b77ec7fb73e5bf387(typescript@5.9.3)':
+  '@progression-labs/infra@https://codeload.github.com/chrismlittle123/infra/tar.gz/d75ef3ad514b133ed4ebd27b77ec7fb73e5bf387(typescript@5.9.3)':
     dependencies:
       '@pulumi/aws': 6.83.2(typescript@5.9.3)
       '@pulumi/gcp': 9.11.0(typescript@5.9.3)
@@ -9052,7 +9052,7 @@ snapshots:
       - ts-node
       - typescript
 
-  '@palindrom/fastify-api@https://codeload.github.com/chrismlittle123/fastify-api/tar.gz/03d7e214f45a45a3d751ca3be0d07ae966763249(@opentelemetry/core@2.5.0(@opentelemetry/api@1.9.0))(@types/pg@8.15.6)(@types/react@19.2.13)(encoding@0.1.13)(react@19.2.3)':
+  '@progression-labs/fastify-api@https://codeload.github.com/chrismlittle123/fastify-api/tar.gz/03d7e214f45a45a3d751ca3be0d07ae966763249(@opentelemetry/core@2.5.0(@opentelemetry/api@1.9.0))(@types/pg@8.15.6)(@types/react@19.2.13)(encoding@0.1.13)(react@19.2.3)':
     dependencies:
       '@fastify/jwt': 9.1.0
       '@fastify/sensible': 6.0.4

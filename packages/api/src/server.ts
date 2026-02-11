@@ -1,4 +1,4 @@
-import { createApp, registerRoute } from "@palindrom/fastify-api";
+import { createApp, registerRoute } from "@progression-labs/fastify-api";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import { loadConfig } from "./config.js";

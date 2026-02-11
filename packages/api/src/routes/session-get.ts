@@ -1,4 +1,4 @@
-import { defineRoute, z, AppError } from "@palindrom/fastify-api";
+import { defineRoute, z, AppError } from "@progression-labs/fastify-api";
 import { eq } from "drizzle-orm";
 import { sessions, updates } from "../db/schema.js";
 import { reportSchema } from "../lib/schemas.js";

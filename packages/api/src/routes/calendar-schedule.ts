@@ -1,4 +1,4 @@
-import { defineRoute, z } from "@palindrom/fastify-api";
+import { defineRoute, z } from "@progression-labs/fastify-api";
 import { scheduleReminder } from "../lib/calendar.js";
 
 export const calendarScheduleRoute = defineRoute({

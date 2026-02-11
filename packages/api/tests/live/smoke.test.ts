@@ -5,7 +5,7 @@ const CLOUD_RUN_URL =
   "https://brief-api-container-dev-hoon2yvuaq-nw.a.run.app";
 
 const VERCEL_URL =
-  process.env.VERCEL_URL ?? "https://brief-palindrom.vercel.app";
+  process.env.VERCEL_URL ?? "https://brief-progression-labs.vercel.app";
 
 async function fetchJSON(url: string, init?: RequestInit) {
   const res = await fetch(url, init);

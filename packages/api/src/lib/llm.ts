@@ -1,4 +1,4 @@
-import { AppError } from "@palindrom/fastify-api";
+import { AppError } from "@progression-labs/fastify-api";
 
 type CompletionRequest = {
   model: string;

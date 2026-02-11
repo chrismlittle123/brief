@@ -83,18 +83,18 @@ Still waiting on:
 The Fellowship needs your Brief submission before Monday 9am! Don't make us send the Nazgûl. 🐴`;
 
 export const TEAM_MEMBERS = [
-  { email: "chris@palindrom.ai", name: "Chris", slackId: null },
-  { email: "faycal.arbai@palindrom.ai", name: "Faycal", slackId: null },
-  { email: "jon@palindrom.ai", name: "Jon", slackId: null },
-  { email: "talha@palindrom.ai", name: "Talha", slackId: null },
-  { email: "luan@palindrom.ai", name: "Luan", slackId: null },
+  { email: "chris@progression-labs.ai", name: "Chris", slackId: null },
+  { email: "faycal.arbai@progression-labs.ai", name: "Faycal", slackId: null },
+  { email: "jon@progression-labs.ai", name: "Jon", slackId: null },
+  { email: "talha@progression-labs.ai", name: "Talha", slackId: null },
+  { email: "luan@progression-labs.ai", name: "Luan", slackId: null },
   {
-    email: "christopher.lovejoy@palindrom.ai",
+    email: "christopher.lovejoy@progression-labs.ai",
     name: "Christopher",
     slackId: null,
   },
-  { email: "sam@palindrom.ai", name: "Sam", slackId: null },
-  { email: "gabor@palindrom.ai", name: "Gabor", slackId: null },
+  { email: "sam@progression-labs.ai", name: "Sam", slackId: null },
+  { email: "gabor@progression-labs.ai", name: "Gabor", slackId: null },
 ];
 
 export type EscalationLevel = "GENTLE" | "FULL_ROAST";

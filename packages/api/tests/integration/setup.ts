@@ -1,4 +1,4 @@
-import { createApp, registerRoute, type RouteDefinition } from "@palindrom/fastify-api";
+import { createApp, registerRoute, type RouteDefinition } from "@progression-labs/fastify-api";
 import multipart from "@fastify/multipart";
 import { vi } from "vitest";
 

@@ -1,4 +1,4 @@
-import { defineRoute, z, AppError, type Database } from "@palindrom/fastify-api";
+import { defineRoute, z, AppError, type Database } from "@progression-labs/fastify-api";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { sessions, updates } from "../db/schema.js";

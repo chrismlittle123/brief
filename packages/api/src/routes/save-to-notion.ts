@@ -1,4 +1,4 @@
-import { defineRoute, z, AppError } from "@palindrom/fastify-api";
+import { defineRoute, z, AppError } from "@progression-labs/fastify-api";
 import { getNotionApiKey, getNotionDatabaseId } from "../lib/secrets.js";
 import { reportSchema } from "../lib/schemas.js";
 

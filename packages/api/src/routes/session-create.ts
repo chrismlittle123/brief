@@ -1,4 +1,4 @@
-import { defineRoute, z, AppError } from "@palindrom/fastify-api";
+import { defineRoute, z, AppError } from "@progression-labs/fastify-api";
 import { AccessToken } from "livekit-server-sdk";
 import { nanoid } from "nanoid";
 import { sessions } from "../db/schema.js";

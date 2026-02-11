@@ -17,7 +17,7 @@
     "@clerk/backend": "^1.0.0",
     "@fastify/cors": "^10.0.0",
     "@fastify/multipart": "^9.0.0",
-    "@palindrom/fastify-api": "github:chrismlittle123/fastify-api",
+    "@progression-labs/fastify-api": "github:chrismlittle123/fastify-api",
     "drizzle-orm": "^0.38.4",
     "fastify": "^5.7.4",
     "livekit-server-sdk": "^2.15.0",

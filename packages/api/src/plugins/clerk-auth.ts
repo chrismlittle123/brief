@@ -4,7 +4,7 @@ import {
   type ClerkClient,
 } from "@clerk/backend";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { AppError } from "@palindrom/fastify-api";
+import { AppError } from "@progression-labs/fastify-api";
 
 type ClerkAuth = {
   userId: string;

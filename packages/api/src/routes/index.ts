@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import type { RouteDefinition } from "@palindrom/fastify-api";
+import type { RouteDefinition } from "@progression-labs/fastify-api";
 import { transcribeRoute } from "./transcribe.js";
 import { generateReportRoute } from "./generate-report.js";
 import { refineReportRoute } from "./refine-report.js";

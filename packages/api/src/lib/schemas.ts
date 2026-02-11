@@ -1,4 +1,4 @@
-import { z } from "@palindrom/fastify-api";
+import { z } from "@progression-labs/fastify-api";
 
 export const reportSchema = z.object({
   tldr: z.string(),
