@@ -45,11 +45,35 @@ jobs:
       - name: Install Pulumi
         uses: pulumi/setup-pulumi@v2
 
-      - name: Refresh state
+      - name: Remove orphaned Cloud SQL resources from state
         working-directory: infra
         run: |
           pulumi login ${{ env.PULUMI_STATE_BUCKET }}
           pulumi stack select dev
+
+          # List all resources to find Cloud SQL ones
+          echo "=== Current resources ==="
+          pulumi stack export | python3 -c "
+          import json, sys
+          state = json.load(sys.stdin)
+          for r in state.get('deployment', {}).get('resources', []):
+              t = r.get('type', '')
+              if 'sql' in t.lower() or 'main' in r.get('urn', '').lower().split('::')[-1]:
+                  print(f\"  {r['urn']}\")
+          "
+
+          # Delete each orphaned Cloud SQL resource
+          for urn in \
+            "urn:pulumi:dev::brief::gcp:sql/user:User::main-user" \
+            "urn:pulumi:dev::brief::gcp:sql/database:Database::main-db" \
+            "urn:pulumi:dev::brief::gcp:sql/databaseInstance:DatabaseInstance::main-instance"
+          do
+            echo "Deleting: $urn"
+            pulumi state delete "$urn" --yes 2>&1 || echo "  (not found or already removed)"
+          done
+
+          echo ""
+          echo "=== Refresh remaining state ==="
           pulumi refresh --yes
         env:
           PULUMI_CONFIG_PASSPHRASE: ""
