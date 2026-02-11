@@ -21,7 +21,7 @@ export const MOCK_REPORT = {
   status: "ON_TRACK",
 };
 
-export function createMockClerk() {
+function createMockClerk() {
   return {
     users: {
       getUser: vi.fn().mockResolvedValue({
