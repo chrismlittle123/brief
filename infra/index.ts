@@ -1,6 +1,6 @@
 import * as gcp from "@pulumi/gcp";
 import * as pulumi from "@pulumi/pulumi";
-import { defineConfig, createSecret } from "@palindrom-ai/infra";
+import { defineConfig, createSecret, createDatabase } from "@palindrom-ai/infra";
 
 // Configure for GCP dev environment
 defineConfig({
@@ -23,7 +23,6 @@ const livekitApiKey = createSecret("livekit-api-key");
 const livekitApiSecret = createSecret("livekit-api-secret");
 const livekitUrl = createSecret("livekit-url");
 const deepgramApiKey = createSecret("deepgram-api-key");
-const databaseUrl = createSecret("database-url");
 
 const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
   "llm-gateway-url": llmGatewayUrl,
@@ -37,8 +36,33 @@ const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
   "livekit-api-secret": livekitApiSecret,
   "livekit-url": livekitUrl,
   "deepgram-api-key": deepgramApiKey,
-  "database-url": databaseUrl,
 };
+
+// --- Database (Cloud SQL PostgreSQL via @palindrom-ai/infra) ---
+
+const db = createDatabase("main", { public: true });
+
+// Read the password back from the secret that createDatabase stored
+const dbPassword = db.passwordSecretArn.apply(secretName =>
+  gcp.secretmanager.getSecretVersion({
+    secret: secretName,
+    version: "latest",
+  })
+);
+
+// Store full DATABASE_URL as a secret for Cloud Run to mount
+const databaseUrlSecret = new gcp.secretmanager.Secret("database-url-secret", {
+  secretId: "brief-database-url-dev",
+  replication: { auto: {} },
+});
+
+new gcp.secretmanager.SecretVersion("database-url-version", {
+  secret: databaseUrlSecret.id,
+  secretData: pulumi.all([db.username, dbPassword, db.host, db.port, db.database]).apply(
+    ([username, pw, host, port, database]) =>
+      `postgresql://${username}:${pw.secretData}@${host}:${port}/${database}?sslmode=require`
+  ),
+});
 
 // --- Artifact Registry ---
 
@@ -80,6 +104,19 @@ for (const [name, secret] of Object.entries(allSecrets)) {
     member: cloudRunAgent,
   });
 }
+
+// Grant Cloud Run access to the database URL secret
+new gcp.secretmanager.SecretIamMember("api-secret-access-database-url", {
+  secretId: databaseUrlSecret.id,
+  role: "roles/secretmanager.secretAccessor",
+  member,
+});
+
+new gcp.secretmanager.SecretIamMember("api-agent-secret-access-database-url", {
+  secretId: databaseUrlSecret.id,
+  role: "roles/secretmanager.secretAccessor",
+  member: cloudRunAgent,
+});
 
 // Cloud Run service (logical name: "api")
 const api = new gcp.cloudrunv2.Service("api", {
@@ -156,7 +193,7 @@ const api = new gcp.cloudrunv2.Service("api", {
         },
         {
           name: "DATABASE_URL",
-          valueSource: { secretKeyRef: { secret: databaseUrl.secretName, version: "latest" } },
+          valueSource: { secretKeyRef: { secret: databaseUrlSecret.secretId, version: "latest" } },
         },
       ],
     }],
@@ -250,9 +287,11 @@ export const secrets = {
   livekitApiSecret: livekitApiSecret.secretName,
   livekitUrl: livekitUrl.secretName,
   deepgramApiKey: deepgramApiKey.secretName,
-  databaseUrl: databaseUrl.secretName,
 };
 
 export const registryName = registry.name;
 export const apiUrl = api.uri;
 export const apiServiceName = api.name;
+export const dbHost = db.host;
+export const dbPort = db.port;
+export const dbName = db.database;
