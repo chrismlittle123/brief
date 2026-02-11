@@ -38,8 +38,6 @@ export function loadConfig(): AppConfig {
     clerkPublishableKey:
       process.env["CLERK_PUBLISHABLE_KEY"] ??
       requireEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"),
-    databaseUrl:
-      process.env["DATABASE_URL"] ??
-      `postgresql://${requireEnv("DB_USERNAME")}:${requireEnv("DB_PASSWORD")}@${requireEnv("DB_HOST")}:${requireEnv("DB_PORT")}/${requireEnv("DB_NAME")}`,
+    databaseUrl: requireEnv("DATABASE_URL"),
   };
 }
