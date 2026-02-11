@@ -1,0 +1,56 @@
+name: Pulumi Refresh
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-2
+  PULUMI_STATE_BUCKET: s3://pulumi-state-215629979895
+
+jobs:
+  refresh:
+    name: Refresh Pulumi State
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::215629979895:role/github-actions-pulumi
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/10492061315/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions@christopher-little-dev.iam.gserviceaccount.com
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install Pulumi
+        uses: pulumi/setup-pulumi@v2
+
+      - name: Refresh state
+        working-directory: infra
+        run: |
+          pulumi login ${{ env.PULUMI_STATE_BUCKET }}
+          pulumi stack select dev
+          pulumi refresh --yes
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ""
+          GOOGLE_PROJECT: christopher-little-dev
