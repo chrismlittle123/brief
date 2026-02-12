@@ -20,7 +20,7 @@ export const sessionGetRoute = defineRoute({
         livekitRoom: z.string(),
         weekOf: z.string().nullable(),
         transcript: z.string().nullable(),
-        metadata: z.unknown().nullable(),
+        metadata: z.record(z.string(), z.unknown()).nullable(),
         createdAt: z.string(),
         updatedAt: z.string(),
         report: reportSchema.nullable(),
