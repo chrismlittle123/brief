@@ -104,6 +104,16 @@ body {
   }
 }
 
+/* Voice session waveform animation */
+@keyframes waveform {
+  0% {
+    height: 8px;
+  }
+  100% {
+    height: 28px;
+  }
+}
+
 /* Mic button pulse animation */
 @keyframes gentlePulse {
   0%, 100% {

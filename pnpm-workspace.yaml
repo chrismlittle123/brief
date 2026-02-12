@@ -3,3 +3,5 @@ packages:
   - "infra"
 onlyBuiltDependencies:
   - "@progression-labs/infra"
+  - "@chrismlittle123/fastify-api"
+  - "@chrismlittle123/infra"
