@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Sparkles, MessageCircle, ExternalLink, AlertCircle, X, Loader2, Check } from "lucide-react";
-import { generateReport, refineReport, saveToNotion, Report } from "@/lib/api";
+import { refineReport, saveToNotion, Report } from "@/lib/api";
 import { BriefLogo } from "@/components/brief-logo";
 import { ReportCard } from "./report-card";
 
@@ -11,18 +11,6 @@ function getWeekOf(): string {
   const now = new Date();
   const options: Intl.DateTimeFormatOptions = { month: "long", day: "numeric", year: "numeric" };
   return now.toLocaleDateString("en-US", options);
-}
-
-function LoadingView() {
-  return (
-    <main className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-foreground mb-2">Generating your report...</h2>
-        <p className="text-muted-foreground">Brief AI is analyzing your responses</p>
-      </div>
-    </main>
-  );
 }
 
 function ErrorView({ error }: { error: string }) {
@@ -124,27 +112,17 @@ function SaveButton({ isSaving, onClick }: { isSaving: boolean; onClick: () => v
 }
 
 type CompletePageProps = {
-  responses: Record<string, string>;
-  initialReport?: Report;
+  initialReport: Report;
 };
 
-function useCompletePageState(responses: Record<string, string>, initialReport?: Report) {
+function useCompletePageState(initialReport: Report) {
   const [showEditChat, setShowEditChat] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
-  const [report, setReport] = useState<Report | null>(initialReport || null);
-  const [isGenerating, setIsGenerating] = useState(!initialReport);
+  const [report, setReport] = useState<Report>(initialReport);
   const [error, setError] = useState<string | null>(null);
   const [isRefining, setIsRefining] = useState(false);
   const [notionUrl, setNotionUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (initialReport) return;
-    generateReport(responses)
-      .then(setReport)
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to generate report"))
-      .finally(() => setIsGenerating(false));
-  }, [responses, initialReport]);
 
   const handleRefine = async (instruction: string) => {
     if (!report) return;
@@ -173,14 +151,13 @@ function useCompletePageState(responses: Record<string, string>, initialReport?:
     }
   };
 
-  return { showEditChat, setShowEditChat, isSaving, showSavedPopup, setShowSavedPopup, report, isGenerating, error, isRefining, notionUrl, handleRefine, handleSave };
+  return { showEditChat, setShowEditChat, isSaving, showSavedPopup, setShowSavedPopup, report, error, isRefining, notionUrl, handleRefine, handleSave };
 }
 
-export function CompletePage({ responses, initialReport }: CompletePageProps) {
-  const state = useCompletePageState(responses, initialReport);
+export function CompletePage({ initialReport }: CompletePageProps) {
+  const state = useCompletePageState(initialReport);
 
-  if (state.isGenerating) return <LoadingView />;
-  if (state.error || !state.report) return <ErrorView error={state.error || "Failed to generate report"} />;
+  if (state.error) return <ErrorView error={state.error} />;
 
   return (
     <main className="min-h-screen bg-background">

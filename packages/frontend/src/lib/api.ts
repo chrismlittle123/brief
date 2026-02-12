@@ -1,24 +1,6 @@
 // API calls go to Next.js API routes (same origin)
 const API_URL = "/api/v1";
 
-export async function transcribeAudio(audioBlob: Blob): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", audioBlob, "recording.webm");
-
-  const response = await fetch(`${API_URL}/transcribe`, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Transcription failed");
-  }
-
-  const data = await response.json();
-  return data.text;
-}
-
 export type Report = {
   tldr: string;
   thisWeek: string[];
@@ -31,23 +13,57 @@ export type Report = {
   status: "ON_TRACK" | "AT_RISK" | "BLOCKED";
 };
 
-export async function generateReport(
-  responses: Record<string, string>
-): Promise<Report> {
-  const response = await fetch(`${API_URL}/generate-report`, {
+type CreateSessionOptions = {
+  voice?: string;
+  systemPrompt?: string;
+  greeting?: string;
+  userName?: string;
+  weekOf?: string;
+};
+
+type CreateSessionResponse = {
+  sessionId: string;
+  token: string;
+  livekitUrl: string;
+};
+
+type SessionResponse = {
+  id: string;
+  status: string;
+  livekitRoom: string;
+  weekOf?: string;
+  transcript?: string;
+  createdAt: string;
+  updatedAt: string;
+  report?: Report;
+};
+
+export async function createSession(
+  opts: CreateSessionOptions
+): Promise<CreateSessionResponse> {
+  const response = await fetch(`${API_URL}/sessions`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ responses }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(opts),
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Report generation failed");
+    const error = (await response.json()) as { message?: string };
+    throw new Error(error.message || "Failed to create session");
   }
 
-  return response.json();
+  return response.json() as Promise<CreateSessionResponse>;
+}
+
+export async function getSession(id: string): Promise<SessionResponse> {
+  const response = await fetch(`${API_URL}/sessions/${id}`);
+
+  if (!response.ok) {
+    const error = (await response.json()) as { message?: string };
+    throw new Error(error.message || "Failed to get session");
+  }
+
+  return response.json() as Promise<SessionResponse>;
 }
 
 export async function refineReport(
@@ -56,18 +72,16 @@ export async function refineReport(
 ): Promise<Report> {
   const response = await fetch(`${API_URL}/refine-report`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ currentReport, instruction }),
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = (await response.json()) as { message?: string };
     throw new Error(error.message || "Report refinement failed");
   }
 
-  return response.json();
+  return response.json() as Promise<Report>;
 }
 
 export async function saveToNotion(
@@ -75,16 +89,18 @@ export async function saveToNotion(
 ): Promise<{ success: boolean; pageId: string; url: string }> {
   const response = await fetch(`${API_URL}/save-to-notion`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ report }),
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = (await response.json()) as { message?: string };
     throw new Error(error.message || "Failed to save to Notion");
   }
 
-  return response.json();
+  return response.json() as Promise<{
+    success: boolean;
+    pageId: string;
+    url: string;
+  }>;
 }
