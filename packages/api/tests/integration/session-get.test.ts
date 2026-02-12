@@ -52,7 +52,7 @@ describe("GET /v1/sessions/:id — not completed", () => {
 
     const res = await app.inject({ method: "GET", url: "/v1/sessions/session-1" });
     expect(res.statusCode).toBe(200);
-    expect(res.json().report).toBeNull();
+    expect(res.json().report).toBeUndefined();
   });
 });
 
