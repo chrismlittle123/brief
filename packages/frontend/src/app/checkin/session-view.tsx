@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import {
   LiveKitRoom,
   useVoiceAssistant,
@@ -29,22 +30,17 @@ function IdleBar() {
   return <div className="w-1.5 rounded-full bg-muted h-2 transition-all duration-150" />;
 }
 
-function SessionControls() {
-  const { state } = useVoiceAssistant();
+const STATUS_LABELS: Record<string, string> = {
+  connecting: "Connecting to agent...",
+  initializing: "Agent joining...",
+  listening: "Listening...",
+  thinking: "Thinking...",
+  speaking: "Agent speaking...",
+};
 
+function SessionControls({ onEndSession }: { onEndSession: () => void }) {
+  const { state } = useVoiceAssistant();
   const isActive = state === "listening" || state === "speaking";
-  const statusLabel =
-    state === "connecting"
-      ? "Connecting to agent..."
-      : state === "initializing"
-        ? "Agent joining..."
-        : state === "listening"
-          ? "Listening..."
-          : state === "thinking"
-            ? "Thinking..."
-            : state === "speaking"
-              ? "Agent speaking..."
-              : "Connected";
 
   return (
     <div className="text-center">
@@ -54,9 +50,12 @@ function SessionControls() {
         )}
       </div>
 
-      <p className="text-sm font-medium text-muted-foreground mb-6">{statusLabel}</p>
+      <p className="text-sm font-medium text-muted-foreground mb-6">
+        {STATUS_LABELS[state] ?? "Connected"}
+      </p>
 
       <DisconnectButton
+        onClick={onEndSession}
         className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-lg transition-all hover:bg-destructive/90"
       >
         <svg
@@ -81,17 +80,19 @@ function SessionControls() {
 }
 
 export function SessionView({ token, livekitUrl, onDisconnect }: SessionViewProps) {
+  const userEndedRef = useRef(false);
+
   return (
     <LiveKitRoom
       token={token}
       serverUrl={livekitUrl}
       connect={true}
       audio={true}
-      onDisconnected={onDisconnect}
+      onDisconnected={() => { if (userEndedRef.current) onDisconnect(); }}
       style={{ display: "contents" }}
     >
       <RoomAudioRenderer />
-      <SessionControls />
+      <SessionControls onEndSession={() => { userEndedRef.current = true; }} />
     </LiveKitRoom>
   );
 }
