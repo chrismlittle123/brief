@@ -27,6 +27,11 @@ describe("Cloud Run API (live)", () => {
     const spec = res.json();
     expect(spec.openapi).toMatch(/^3\./);
     expect(spec.paths).toHaveProperty("/v1/transcribe");
+    expect(spec.paths).toHaveProperty("/v1/sessions");
+    expect(spec.paths).toHaveProperty("/v1/sessions/{id}");
+    expect(spec.paths).toHaveProperty("/v1/sessions/{id}/token");
+    expect(spec.paths).toHaveProperty("/v1/sessions/{id}/complete");
+    expect(spec.paths).toHaveProperty("/internal/sessions/{id}/complete");
   });
 
   it("POST /v1/transcribe without multipart returns 406", async () => {
@@ -53,6 +58,73 @@ describe("Cloud Run API (live)", () => {
   });
 });
 
+describe("Session routes — auth (live)", () => {
+  it("POST /v1/sessions without auth returns 401", { timeout: 30_000 }, async () => {
+    const res = await fetchJSON(`${CLOUD_RUN_URL}/v1/sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ voice: "alloy" }),
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it("GET /v1/sessions/:id without auth returns 401", { timeout: 30_000 }, async () => {
+    const res = await fetchJSON(`${CLOUD_RUN_URL}/v1/sessions/nonexistent`);
+    expect(res.status).toBe(401);
+  });
+
+  it("GET /v1/sessions/:id/token without auth returns 401", { timeout: 30_000 }, async () => {
+    const res = await fetchJSON(`${CLOUD_RUN_URL}/v1/sessions/nonexistent/token`);
+    expect(res.status).toBe(401);
+  });
+
+  it("POST /v1/sessions/:id/complete without auth returns 401", { timeout: 30_000 }, async () => {
+    const res = await fetchJSON(`${CLOUD_RUN_URL}/v1/sessions/nonexistent/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript: "test" }),
+    });
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("Internal agent routes — API key auth (live)", () => {
+  it(
+    "POST /internal/sessions/:id/complete without API key returns 403",
+    { timeout: 30_000 },
+    async () => {
+      const res = await fetchJSON(
+        `${CLOUD_RUN_URL}/internal/sessions/nonexistent/complete`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ transcript: "test" }),
+        }
+      );
+      expect(res.status).toBe(403);
+    }
+  );
+
+  it(
+    "POST /internal/sessions/:id/complete with wrong API key returns 403",
+    { timeout: 30_000 },
+    async () => {
+      const res = await fetchJSON(
+        `${CLOUD_RUN_URL}/internal/sessions/nonexistent/complete`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": "wrong-key",
+          },
+          body: JSON.stringify({ transcript: "test" }),
+        }
+      );
+      expect(res.status).toBe(403);
+    }
+  );
+});
+
 describe("Vercel proxy (live)", () => {
   it("proxies POST /api/v1/transcribe to Cloud Run", async () => {
     const res = await fetchJSON(`${VERCEL_URL}/api/v1/transcribe`, {
@@ -76,4 +148,35 @@ describe("Vercel proxy (live)", () => {
     const res = await fetch(VERCEL_URL);
     expect(res.status).toBe(200);
   });
+});
+
+describe("Vercel proxy — session routes (live)", () => {
+  it(
+    "proxies POST /api/v1/sessions without auth to Cloud Run",
+    { timeout: 30_000 },
+    async () => {
+      const res = await fetchJSON(`${VERCEL_URL}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voice: "alloy" }),
+      });
+      expect(res.status).toBe(401);
+    }
+  );
+
+  it(
+    "proxies POST /api/internal/sessions/:id/complete without API key to Cloud Run",
+    { timeout: 30_000 },
+    async () => {
+      const res = await fetchJSON(
+        `${VERCEL_URL}/api/internal/sessions/nonexistent/complete`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ transcript: "test" }),
+        }
+      );
+      expect(res.status).toBe(403);
+    }
+  );
 });
