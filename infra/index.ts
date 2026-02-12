@@ -24,7 +24,16 @@ const livekitApiSecret = createSecret("livekit-api-secret");
 const livekitUrl = createSecret("livekit-url");
 const deepgramApiKey = createSecret("deepgram-api-key");
 const databaseUrl = createSecret("database-url");
-const agentApiKey = createSecret("agent-api-key");
+// Import existing secret into Pulumi state (created in a previous partial deploy)
+const agentApiKeySecret = new gcp.secretmanager.Secret("agent-api-key", {
+  secretId: "brief-agent-api-key-secret-dev",
+  replication: { auto: {} },
+}, { import: "projects/10492061315/secrets/brief-agent-api-key-secret-dev" });
+const agentApiKey = {
+  secretName: agentApiKeySecret.secretId,
+  secretArn: agentApiKeySecret.name,
+  envVars: { AGENT_API_KEY_SECRET_NAME: agentApiKeySecret.name },
+};
 
 const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
   "llm-gateway-url": llmGatewayUrl,
