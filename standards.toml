@@ -2,6 +2,10 @@
 tier = "internal"
 project = "brief"
 
+[extends]
+registry = "github:chrismlittle123/standards"
+rulesets = ["typescript-internal"]
+
 # ESLint config lives in packages/frontend, not at monorepo root
 [code.linting.eslint]
 enabled = false
@@ -14,16 +18,6 @@ enabled = false
 [code.unused.knip]
 enabled = false
 
-[process.hooks]
-enabled = true
-require_husky = true
-
 [process.ci]
 enabled = true
 require_workflows = ["ci.yml"]
-
-[process.commits]
-enabled = true
-types = ["feat", "fix", "chore", "docs", "refactor", "test", "style", "perf", "ci", "build"]
-require_scope = false
-max_subject_length = 100
