@@ -12,6 +12,7 @@ import { sessionCreateRoute } from "./session-create.js";
 import { sessionTokenRoute } from "./session-token.js";
 import { sessionCompleteRoute } from "./session-complete.js";
 import { sessionGetRoute } from "./session-get.js";
+import { internalSessionCompleteRoute } from "./internal-session-complete.js";
 
 const routes: RouteDefinition[] = [
   transcribeRoute,
@@ -27,6 +28,7 @@ const routes: RouteDefinition[] = [
   sessionTokenRoute,
   sessionCompleteRoute,
   sessionGetRoute,
+  internalSessionCompleteRoute,
 ];
 
 export function registerAllRoutes(

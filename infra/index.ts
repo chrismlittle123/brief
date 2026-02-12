@@ -24,6 +24,7 @@ const livekitApiSecret = createSecret("livekit-api-secret");
 const livekitUrl = createSecret("livekit-url");
 const deepgramApiKey = createSecret("deepgram-api-key");
 const databaseUrl = createSecret("database-url");
+const agentApiKey = createSecret("agent-api-key");
 
 const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
   "llm-gateway-url": llmGatewayUrl,
@@ -38,6 +39,7 @@ const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
   "livekit-url": livekitUrl,
   "deepgram-api-key": deepgramApiKey,
   "database-url": databaseUrl,
+  "agent-api-key": agentApiKey,
 };
 
 
@@ -159,6 +161,10 @@ const api = new gcp.cloudrunv2.Service("api", {
           name: "DATABASE_URL",
           valueSource: { secretKeyRef: { secret: databaseUrl.secretName, version: "latest" } },
         },
+        {
+          name: "AGENT_API_KEY",
+          valueSource: { secretKeyRef: { secret: agentApiKey.secretName, version: "latest" } },
+        },
       ],
     }],
   },
@@ -252,6 +258,7 @@ export const secrets = {
   livekitUrl: livekitUrl.secretName,
   deepgramApiKey: deepgramApiKey.secretName,
   databaseUrl: databaseUrl.secretName,
+  agentApiKey: agentApiKey.secretName,
 };
 
 export const registryName = registry.name;

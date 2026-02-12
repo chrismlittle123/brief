@@ -2,14 +2,15 @@ import { defineRoute, z, AppError } from "@progression-labs/fastify-api";
 import { eq } from "drizzle-orm";
 import { sessions } from "../db/schema.js";
 import { reportSchema } from "../lib/schemas.js";
+import { requireApiKey } from "../lib/api-key-auth.js";
 import { generateReportFromTranscript, persistCompletion } from "../lib/session-completion.js";
 
-export const sessionCompleteRoute = defineRoute({
+export const internalSessionCompleteRoute = defineRoute({
   method: "POST",
-  url: "/v1/sessions/:id/complete",
+  url: "/internal/sessions/:id/complete",
   auth: "public",
-  tags: ["Sessions"],
-  summary: "Complete a session with transcript and generate report",
+  tags: ["Internal"],
+  summary: "Complete a session via agent API key (internal)",
   schema: {
     params: z.object({ id: z.string() }),
     body: z.object({ transcript: z.string() }),
@@ -17,7 +18,7 @@ export const sessionCompleteRoute = defineRoute({
   },
   handler: async (request) => {
     const app = request.server;
-    const { userId } = await app.requireClerkAuth(request, request.raw as never);
+    requireApiKey(request);
 
     if (!app.db) {
       throw AppError.internal("Database not configured");
@@ -33,12 +34,9 @@ export const sessionCompleteRoute = defineRoute({
       .limit(1);
 
     if (!session) throw AppError.notFound("Session", id);
-    if (session.userId !== userId) {
-      throw AppError.forbidden("Not authorized to access this session");
-    }
 
     const report = await generateReportFromTranscript(transcript);
-    await persistCompletion(app.db, { id, userId, transcript, report });
+    await persistCompletion(app.db, { id, userId: session.userId, transcript, report });
 
     return report;
   },

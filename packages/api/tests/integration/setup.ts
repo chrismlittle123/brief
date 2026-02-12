@@ -11,6 +11,7 @@ process.env.SLACK_WEBHOOK_URL = "http://slack.test/webhook";
 process.env.LIVEKIT_API_KEY = "test-livekit-key";
 process.env.LIVEKIT_API_SECRET = "test-livekit-secret-that-is-long-enough";
 process.env.LIVEKIT_URL = "wss://test.livekit.cloud";
+process.env.AGENT_API_KEY = "test-agent-api-key";
 
 export const MOCK_REPORT = {
   tldr: "Shipped feature X. On track for release.",
@@ -44,7 +45,7 @@ function createMockClerk() {
   };
 }
 
-export function createMockDb() {
+function createMockDb() {
   const chainable = () => {
     const chain: Record<string, ReturnType<typeof vi.fn>> = {};
     chain.values = vi.fn().mockReturnValue(chain);

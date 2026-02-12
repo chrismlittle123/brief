@@ -19,6 +19,8 @@ export const sessionCreateRoute = defineRoute({
       voice: z.string().optional(),
       systemPrompt: z.string().optional(),
       greeting: z.string().optional(),
+      userName: z.string().optional(),
+      weekOf: z.string().optional(),
     }),
     response: {
       200: z.object({
@@ -37,7 +39,7 @@ export const sessionCreateRoute = defineRoute({
     }
 
     const sessionId = nanoid();
-    const { voice, systemPrompt, greeting } = request.body;
+    const { voice, systemPrompt, greeting, userName, weekOf } = request.body;
 
     const apiKey = getLivekitApiKey();
     const apiSecret = getLivekitApiSecret();
@@ -53,16 +55,17 @@ export const sessionCreateRoute = defineRoute({
       canPublish: true,
       canSubscribe: true,
     });
-    at.metadata = JSON.stringify({ voice, systemPrompt, greeting });
+    at.metadata = JSON.stringify({ voice, systemPrompt, greeting, userName, weekOf });
     const token = await at.toJwt();
 
-    const metadata = { voice, systemPrompt, greeting };
+    const metadata = { voice, systemPrompt, greeting, userName, weekOf };
 
     await app.db.drizzle.insert(sessions).values({
       id: sessionId,
       userId,
       livekitRoom: sessionId,
       status: "created",
+      weekOf,
       metadata,
     });
 
