@@ -2,10 +2,10 @@ import { describe, it, expect } from "vitest";
 
 const CLOUD_RUN_URL =
   process.env.CLOUD_RUN_URL ??
-  "https://brief-api-container-dev-hoon2yvuaq-nw.a.run.app";
+  "https://brief-api-container-dev-10492061315.europe-west2.run.app";
 
 const VERCEL_URL =
-  process.env.VERCEL_URL ?? "https://brief-progression-labs.vercel.app";
+  process.env.VERCEL_URL ?? "https://brief-palindrom.vercel.app";
 
 async function fetchJSON(url: string, init?: RequestInit) {
   const res = await fetch(url, init);
@@ -14,7 +14,7 @@ async function fetchJSON(url: string, init?: RequestInit) {
 }
 
 describe("Cloud Run API (live)", () => {
-  it("serves OpenAPI docs", async () => {
+  it("serves OpenAPI docs", { timeout: 30_000 }, async () => {
     const res = await fetch(`${CLOUD_RUN_URL}/docs`, { redirect: "follow" });
     expect(res.status).toBe(200);
     const html = await res.text();
