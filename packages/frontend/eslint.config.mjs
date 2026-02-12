@@ -47,6 +47,14 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-empty-object-type": "off",
     },
   },
+  // Relax line-length rules for test files
+  {
+    files: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    rules: {
+      "max-lines-per-function": "off",
+      "max-lines": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
