@@ -71,7 +71,8 @@ FORMAT YOUR RESPONSE AS:
 Just the Slack message, nothing else. Use Slack formatting:
 - *bold* for emphasis
 - List delinquent members as bullet points with their name and email
-- Keep it under 400 characters
+- Keep it under 400 characters (excluding the link)
+- Always end with: "Submit here: https://brief-palindrom.vercel.app/"
 
 EXAMPLE OUTPUT (GENTLE level, 2 delinquents):
 🎬 *"One does not simply forget their weekly update"* - Gandalf, probably
@@ -80,7 +81,9 @@ Still waiting on:
 • Sarah (sarah@company.com)
 • Mike (mike@company.com)
 
-The Fellowship needs your Brief submission before Monday 9am! Don't make us send the Nazgûl. 🐴`;
+The Fellowship needs your Brief submission before Monday 9am! Don't make us send the Nazgûl. 🐴
+
+Submit here: https://brief-palindrom.vercel.app/`;
 
 export const TEAM_MEMBERS = [
   { email: "chris@progression-labs.ai", name: "Chris", slackId: null },
