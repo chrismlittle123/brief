@@ -5,23 +5,8 @@ import {
 } from "../../src/lib/shame-prompt.js";
 
 describe("getEscalationLevel", () => {
-  it("returns FULL_ROAST on Monday", () => {
-    const monday = new Date("2026-02-09T08:00:00Z");
-    const originalDate = globalThis.Date;
-
-    globalThis.Date = class extends originalDate {
-      constructor() {
-        super();
-        return monday;
-      }
-    } as DateConstructor;
-
-    expect(getEscalationLevel()).toBe("FULL_ROAST");
-    globalThis.Date = originalDate;
-  });
-
   it("returns GENTLE on Friday", () => {
-    const friday = new Date("2026-02-13T18:00:00Z");
+    const friday = new Date("2026-02-13T16:00:00Z");
     const originalDate = globalThis.Date;
 
     globalThis.Date = class extends originalDate {
@@ -32,6 +17,36 @@ describe("getEscalationLevel", () => {
     } as DateConstructor;
 
     expect(getEscalationLevel()).toBe("GENTLE");
+    globalThis.Date = originalDate;
+  });
+
+  it("returns MEDIUM on Monday", () => {
+    const monday = new Date("2026-02-09T16:00:00Z");
+    const originalDate = globalThis.Date;
+
+    globalThis.Date = class extends originalDate {
+      constructor() {
+        super();
+        return monday;
+      }
+    } as DateConstructor;
+
+    expect(getEscalationLevel()).toBe("MEDIUM");
+    globalThis.Date = originalDate;
+  });
+
+  it("returns FULL_ROAST on Tuesday", () => {
+    const tuesday = new Date("2026-02-10T11:00:00Z");
+    const originalDate = globalThis.Date;
+
+    globalThis.Date = class extends originalDate {
+      constructor() {
+        super();
+        return tuesday;
+      }
+    } as DateConstructor;
+
+    expect(getEscalationLevel()).toBe("FULL_ROAST");
     globalThis.Date = originalDate;
   });
 });

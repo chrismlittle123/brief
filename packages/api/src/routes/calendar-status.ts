@@ -1,7 +1,7 @@
 import { defineRoute, z } from "@progression-labs/fastify-api";
 import {
   getGoogleAccessToken,
-  getNextFriday,
+  getNextMonday,
   hasExistingReminder,
 } from "../lib/calendar.js";
 
@@ -29,8 +29,8 @@ export const calendarStatusRoute = defineRoute({
       return { scheduled: false };
     }
 
-    const fridayDate = getNextFriday();
-    const existing = await hasExistingReminder(accessToken, fridayDate, request.log);
+    const mondayDate = getNextMonday();
+    const existing = await hasExistingReminder(accessToken, mondayDate, request.log);
 
     return {
       scheduled: existing.exists,

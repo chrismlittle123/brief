@@ -34,17 +34,17 @@ export async function getGoogleAccessToken(
 }
 
 /**
- * Get the upcoming Friday from the given date.
- * If today is Friday, returns today (so the cron running Friday morning
- * schedules for the same day). Otherwise returns the next Friday.
+ * Get the upcoming Monday from the given date.
+ * If today is Monday, returns today (so the cron running Monday morning
+ * schedules for the same day). Otherwise returns the next Monday.
  */
-export function getNextFriday(from: Date = new Date()): Date {
-  const day = from.getDay(); // 0=Sun … 5=Fri 6=Sat
-  const daysUntilFriday = day <= 5 ? 5 - day : 6; // days until next Friday
-  if (daysUntilFriday === 0) return from; // today is Friday
-  const friday = new Date(from);
-  friday.setDate(from.getDate() + daysUntilFriday);
-  return friday;
+export function getNextMonday(from: Date = new Date()): Date {
+  const day = from.getDay(); // 0=Sun … 1=Mon … 6=Sat
+  const daysUntilMonday = day === 0 ? 1 : day <= 1 ? 1 - day : 8 - day;
+  if (daysUntilMonday === 0) return from; // today is Monday
+  const monday = new Date(from);
+  monday.setDate(from.getDate() + daysUntilMonday);
+  return monday;
 }
 
 function toLondonDatetime(date: Date, hours: number, minutes: number): string {
@@ -151,11 +151,11 @@ async function fetchFreeBusy(
 
 async function findSlotAfterLastMeeting(
   accessToken: string,
-  fridayDate: Date,
+  mondayDate: Date,
   log: FastifyBaseLogger
 ): Promise<{ start: string; end: string } | null> {
-  const dayStart = toRFC3339(fridayDate, DAY_START_HOUR, 0);
-  const dayEnd = toRFC3339(fridayDate, DAY_END_HOUR, 59);
+  const dayStart = toRFC3339(mondayDate, DAY_START_HOUR, 0);
+  const dayEnd = toRFC3339(mondayDate, DAY_END_HOUR, 59);
 
   const busyIntervals = await fetchFreeBusy(accessToken, dayStart, dayEnd, log);
   if (!busyIntervals) return null;
@@ -166,19 +166,19 @@ async function findSlotAfterLastMeeting(
   const slotEndHour = Math.floor(slotEndMinutes / 60);
   const slotEndMin = slotEndMinutes % 60;
 
-  const start = toLondonDatetime(fridayDate, hour, min);
-  const end = toLondonDatetime(fridayDate, slotEndHour, slotEndMin);
+  const start = toLondonDatetime(mondayDate, hour, min);
+  const end = toLondonDatetime(mondayDate, slotEndHour, slotEndMin);
 
   return { start, end };
 }
 
 export async function hasExistingReminder(
   accessToken: string,
-  fridayDate: Date,
+  mondayDate: Date,
   log: FastifyBaseLogger
 ): Promise<{ exists: boolean; eventId?: string; startTime?: string }> {
-  const dayStart = toRFC3339(fridayDate, 0, 0);
-  const dayEnd = toRFC3339(fridayDate, 23, 59);
+  const dayStart = toRFC3339(mondayDate, 0, 0);
+  const dayEnd = toRFC3339(mondayDate, 23, 59);
 
   const response = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
@@ -272,9 +272,9 @@ export async function scheduleReminder(
     return { scheduled: false, reason: "no_google_token" };
   }
 
-  const fridayDate = getNextFriday();
+  const mondayDate = getNextMonday();
 
-  const existing = await hasExistingReminder(accessToken, fridayDate, log);
+  const existing = await hasExistingReminder(accessToken, mondayDate, log);
   if (existing.exists) {
     return {
       scheduled: true,
@@ -283,7 +283,7 @@ export async function scheduleReminder(
     };
   }
 
-  const slot = await findSlotAfterLastMeeting(accessToken, fridayDate, log);
+  const slot = await findSlotAfterLastMeeting(accessToken, mondayDate, log);
   if (!slot) {
     return { scheduled: false, reason: "calendar_query_failed" };
   }
