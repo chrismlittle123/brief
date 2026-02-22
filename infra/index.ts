@@ -193,13 +193,13 @@ new gcp.cloudrunv2.ServiceIamMember("api-invoker", {
 
 // --- Cloud Scheduler cron jobs ---
 
-// Calendar reminders — Wednesday 9am UK time (before Friday)
+// Calendar reminders — Wednesday 9am UK time (before Monday)
 new gcp.cloudscheduler.Job("cron-calendar-reminders", {
   name: "brief-calendar-reminders-dev",
   region: "europe-west2",
   schedule: "0 9 * * 3",
   timeZone: "Europe/London",
-  description: "Schedule Friday calendar reminders for all users",
+  description: "Schedule Monday calendar reminders for all users",
   attemptDeadline: "300s",
   retryConfig: { retryCount: 2 },
   httpTarget: {
@@ -208,8 +208,8 @@ new gcp.cloudscheduler.Job("cron-calendar-reminders", {
   },
 });
 
-// Shame bot — 3 escalation levels per spec
-// Friday 4pm (GENTLE), Sunday 6pm (MEDIUM), Monday 8am (FULL_ROAST)
+// Shame bot — 3 escalation levels
+// Friday 4pm (GENTLE), Monday 4pm (MEDIUM), Tuesday 11am (FULL_ROAST)
 new gcp.cloudscheduler.Job("cron-shame-friday", {
   name: "brief-shame-friday-dev",
   region: "europe-west2",
@@ -224,10 +224,10 @@ new gcp.cloudscheduler.Job("cron-shame-friday", {
   },
 });
 
-new gcp.cloudscheduler.Job("cron-shame-sunday", {
-  name: "brief-shame-sunday-dev",
+new gcp.cloudscheduler.Job("cron-shame-monday", {
+  name: "brief-shame-monday-dev",
   region: "europe-west2",
-  schedule: "0 18 * * 0",
+  schedule: "0 16 * * 1",
   timeZone: "Europe/London",
   description: "Shame bot medium escalation",
   attemptDeadline: "300s",
@@ -238,10 +238,10 @@ new gcp.cloudscheduler.Job("cron-shame-sunday", {
   },
 });
 
-new gcp.cloudscheduler.Job("cron-shame-monday", {
-  name: "brief-shame-monday-dev",
+new gcp.cloudscheduler.Job("cron-shame-tuesday", {
+  name: "brief-shame-tuesday-dev",
   region: "europe-west2",
-  schedule: "0 8 * * 1",
+  schedule: "0 11 * * 2",
   timeZone: "Europe/London",
   description: "Shame bot full roast",
   attemptDeadline: "300s",
