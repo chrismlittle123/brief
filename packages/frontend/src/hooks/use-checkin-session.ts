@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { createSession, getSession, Report } from "@/lib/api";
 
-export type ViewState = "ready" | "connecting" | "active" | "processing" | "complete";
+type ViewState = "ready" | "connecting" | "active" | "processing" | "complete";
 
 const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_MS = 60000;
