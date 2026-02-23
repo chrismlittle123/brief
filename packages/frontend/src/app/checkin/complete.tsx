@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Sparkles, MessageCircle, ExternalLink, AlertCircle, X, Loader2, Check } from "lucide-react";
-import { refineReport, saveToNotion, Report } from "@/lib/api";
+import { Sparkles, MessageCircle, AlertCircle, Loader2, Check } from "lucide-react";
+import { refineReport, Report } from "@/lib/api";
 import { BriefLogo } from "@/components/brief-logo";
 import { ReportCard } from "./report-card";
 
@@ -64,29 +64,6 @@ function EditChat({ onUpdate, isRefining }: { onUpdate: (instruction: string) =>
   );
 }
 
-function SavedPopup({ notionUrl, onClose }: { notionUrl: string | null; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="relative rounded-2xl bg-card p-8 shadow-xl text-center animate-in fade-in zoom-in duration-200 max-w-sm mx-4">
-        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          <X className="h-5 w-5" />
-        </button>
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
-          <Check className="h-8 w-8 text-success" />
-        </div>
-        <h3 className="text-xl font-semibold text-foreground mb-2">Saved to Notion!</h3>
-        <p className="text-muted-foreground">Your weekly update has been saved successfully.</p>
-        <div className="mt-6">
-          <a href={notionUrl || "#"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-            <ExternalLink className="h-4 w-4" />
-            View in Notion
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function EditToggle({ onClick }: { onClick: () => void }) {
   return (
     <button onClick={onClick} className="w-full rounded-xl border-2 border-dashed border-border p-4 text-center hover:border-primary hover:bg-primary/5 transition-colors group">
@@ -97,16 +74,14 @@ function EditToggle({ onClick }: { onClick: () => void }) {
   );
 }
 
-function SaveButton({ isSaving, onClick }: { isSaving: boolean; onClick: () => void }) {
+function SavedConfirmation() {
   return (
-    <div className="mt-8">
-      <button onClick={onClick} disabled={isSaving} className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50">
-        {isSaving ? (
-          <><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />Saving to Notion...</>
-        ) : (
-          <><ExternalLink className="h-5 w-5" />Save to Notion</>
-        )}
-      </button>
+    <div className="mt-8 rounded-xl border border-border bg-card p-6 text-center">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-success/10">
+        <Check className="h-6 w-6 text-success" />
+      </div>
+      <p className="font-semibold text-foreground">Update saved</p>
+      <p className="text-sm text-muted-foreground mt-1">Your weekly update has been saved automatically.</p>
     </div>
   );
 }
@@ -117,12 +92,9 @@ type CompletePageProps = {
 
 function useCompletePageState(initialReport: Report) {
   const [showEditChat, setShowEditChat] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showSavedPopup, setShowSavedPopup] = useState(false);
   const [report, setReport] = useState<Report>(initialReport);
   const [error, setError] = useState<string | null>(null);
   const [isRefining, setIsRefining] = useState(false);
-  const [notionUrl, setNotionUrl] = useState<string | null>(null);
 
   const handleRefine = async (instruction: string) => {
     if (!report) return;
@@ -137,21 +109,7 @@ function useCompletePageState(initialReport: Report) {
     }
   };
 
-  const handleSave = async () => {
-    if (!report) return;
-    setIsSaving(true);
-    try {
-      const result = await saveToNotion(report);
-      setNotionUrl(result.url);
-      setShowSavedPopup(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save to Notion");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return { showEditChat, setShowEditChat, isSaving, showSavedPopup, setShowSavedPopup, report, error, isRefining, notionUrl, handleRefine, handleSave };
+  return { showEditChat, setShowEditChat, report, error, isRefining, handleRefine };
 }
 
 export function CompletePage({ initialReport }: CompletePageProps) {
@@ -174,11 +132,10 @@ export function CompletePage({ initialReport }: CompletePageProps) {
         {state.showEditChat
           ? <EditChat onUpdate={state.handleRefine} isRefining={state.isRefining} />
           : <EditToggle onClick={() => state.setShowEditChat(true)} />}
-        <SaveButton isSaving={state.isSaving} onClick={state.handleSave} />
+        <SavedConfirmation />
         <div className="mt-4 flex justify-center">
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Back to Home</Link>
         </div>
-        {state.showSavedPopup && <SavedPopup notionUrl={state.notionUrl} onClose={() => state.setShowSavedPopup(false)} />}
       </div>
     </main>
   );

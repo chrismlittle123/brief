@@ -1,0 +1,5 @@
+config:
+  gcp:project: christopher-little-prod
+  gcp:region: europe-west2
+  brief:environment: prod
+  brief:gcpProjectNumber: "978458954318"

@@ -22,7 +22,7 @@ function HeroSection({ isSignedIn }: { isSignedIn: boolean }) {
         <h2 className="text-5xl font-bold tracking-tight text-foreground md:text-6xl">Fill in the gaps.</h2>
         <p className="mt-12 font-cursive text-6xl text-primary md:text-7xl">Keep it brief.</p>
         <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
-          Share your update in minutes. AI writes a clean report and saves it to Notion — so you can get back to work.
+          Share your update in minutes. AI writes a clean report — so you can get back to work.
         </p>
         <div className="mt-10 flex justify-center">
           <Link href="/checkin" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium font-mono text-primary-foreground transition-colors hover:bg-primary/90">

@@ -25,6 +25,5 @@ export const updates = pgTable("updates", {
   userId: text("user_id").notNull(),
   weekOf: text("week_of").notNull(),
   report: jsonb("report").notNull(),
-  notionPageId: text("notion_page_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

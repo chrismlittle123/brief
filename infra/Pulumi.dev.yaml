@@ -1,4 +1,6 @@
 config:
   gcp:project: christopher-little-dev
   gcp:region: europe-west2
+  brief:environment: dev
+  brief:gcpProjectNumber: "10492061315"
 encryptionsalt: v1:Nk976HnVHjA=:v1:FXovUT6bmy9+nI60:aD8Q+j1KJEH8i0bFYclt/YBgg3ixYQ==

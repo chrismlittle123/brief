@@ -2,20 +2,25 @@ import * as gcp from "@pulumi/gcp";
 import * as pulumi from "@pulumi/pulumi";
 import { defineConfig, createSecret } from "@progression-labs/infra";
 
-// Configure for GCP dev environment
+// Read environment from Pulumi config
+const config = new pulumi.Config("brief");
+const gcpConfig = new pulumi.Config("gcp");
+const environment = config.require("environment");
+const gcpProjectNumber = config.require("gcpProjectNumber");
+const gcpProject = gcpConfig.require("project");
+const region = gcpConfig.require("region");
+
 defineConfig({
   cloud: "gcp",
-  region: "europe-west2",
+  region,
   project: "brief",
-  environment: "dev",
+  environment,
 });
 
 // --- Secrets (values managed externally in GCP Secret Manager) ---
 
 const llmGatewayUrl = createSecret("llm-gateway-url");
 const openaiApiKey = createSecret("openai-api-key");
-const notionApiKey = createSecret("notion-api-key");
-const notionDatabaseId = createSecret("notion-database-id");
 const slackWebhookUrl = createSecret("slack-webhook-url");
 const clerkSecretKey = createSecret("clerk-secret-key");
 const clerkPublishableKey = createSecret("clerk-publishable-key");
@@ -24,22 +29,11 @@ const livekitApiSecret = createSecret("livekit-api-secret");
 const livekitUrl = createSecret("livekit-url");
 const deepgramApiKey = createSecret("deepgram-api-key");
 const databaseUrl = createSecret("database-url");
-// Import existing secret into Pulumi state (created in a previous partial deploy)
-const agentApiKeySecret = new gcp.secretmanager.Secret("agent-api-key", {
-  secretId: "brief-agent-api-key-secret-dev",
-  replication: { auto: {} },
-}, { import: "projects/10492061315/secrets/brief-agent-api-key-secret-dev" });
-const agentApiKey = {
-  secretName: agentApiKeySecret.secretId,
-  secretArn: agentApiKeySecret.name,
-  envVars: { AGENT_API_KEY_SECRET_NAME: agentApiKeySecret.name },
-};
+const agentApiKey = createSecret("agent-api-key");
 
 const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
   "llm-gateway-url": llmGatewayUrl,
   "openai-api-key": openaiApiKey,
-  "notion-api-key": notionApiKey,
-  "notion-database-id": notionDatabaseId,
   "slack-webhook-url": slackWebhookUrl,
   "clerk-secret-key": clerkSecretKey,
   "clerk-publishable-key": clerkPublishableKey,
@@ -56,15 +50,15 @@ const allSecrets: Record<string, ReturnType<typeof createSecret>> = {
 
 const registry = new gcp.artifactregistry.Repository("brief-registry", {
   repositoryId: "brief",
-  location: "europe-west2",
+  location: region,
   format: "DOCKER",
   description: "Docker images for Brief API",
 });
 
 // --- Cloud Run service (inline for native secret references) ---
 
-const apiImage = "europe-west2-docker.pkg.dev/christopher-little-dev/brief/api:latest";
-const serviceName = "brief-api-container-dev";
+const apiImage = `${region}-docker.pkg.dev/${gcpProject}/brief/api:latest`;
+const serviceName = `brief-api-container-${environment}`;
 
 // Service account (logical name matches createContainer: "api-sa")
 const serviceAccount = new gcp.serviceaccount.Account("api-sa", {
@@ -83,8 +77,7 @@ for (const [name, secret] of Object.entries(allSecrets)) {
 }
 
 // Grant secret accessor role to Cloud Run service agent (required for mounting secrets at revision creation)
-const projectNumber = "10492061315";
-const cloudRunAgent = `serviceAccount:service-${projectNumber}@serverless-robot-prod.iam.gserviceaccount.com`;
+const cloudRunAgent = `serviceAccount:service-${gcpProjectNumber}@serverless-robot-prod.iam.gserviceaccount.com`;
 for (const [name, secret] of Object.entries(allSecrets)) {
   new gcp.secretmanager.SecretIamMember(`api-agent-secret-access-${name}`, {
     secretId: secret.secretArn,
@@ -96,13 +89,13 @@ for (const [name, secret] of Object.entries(allSecrets)) {
 // Cloud Run service (logical name: "api")
 const api = new gcp.cloudrunv2.Service("api", {
   name: serviceName,
-  location: "europe-west2",
+  location: region,
   ingress: "INGRESS_TRAFFIC_ALL",
   deletionProtection: false,
   template: {
     serviceAccount: serviceAccount.email,
     labels: {
-      environment: "dev",
+      environment,
       project: "brief",
       "managed-by": "progression-labs-infra",
     },
@@ -129,14 +122,6 @@ const api = new gcp.cloudrunv2.Service("api", {
         {
           name: "OPENAI_API_KEY",
           valueSource: { secretKeyRef: { secret: openaiApiKey.secretName, version: "latest" } },
-        },
-        {
-          name: "NOTION_API_KEY",
-          valueSource: { secretKeyRef: { secret: notionApiKey.secretName, version: "latest" } },
-        },
-        {
-          name: "NOTION_DATABASE_ID",
-          valueSource: { secretKeyRef: { secret: notionDatabaseId.secretName, version: "latest" } },
         },
         {
           name: "SLACK_WEBHOOK_URL",
@@ -186,7 +171,7 @@ const api = new gcp.cloudrunv2.Service("api", {
 // Public access (logical name: "api-invoker")
 new gcp.cloudrunv2.ServiceIamMember("api-invoker", {
   name: api.name,
-  location: "europe-west2",
+  location: region,
   role: "roles/run.invoker",
   member: "allUsers",
 });
@@ -195,8 +180,8 @@ new gcp.cloudrunv2.ServiceIamMember("api-invoker", {
 
 // Calendar reminders — Wednesday 9am UK time (before Monday)
 new gcp.cloudscheduler.Job("cron-calendar-reminders", {
-  name: "brief-calendar-reminders-dev",
-  region: "europe-west2",
+  name: `brief-calendar-reminders-${environment}`,
+  region,
   schedule: "0 9 * * 3",
   timeZone: "Europe/London",
   description: "Schedule Monday calendar reminders for all users",
@@ -208,57 +193,18 @@ new gcp.cloudscheduler.Job("cron-calendar-reminders", {
   },
 });
 
-// Shame bot — 3 escalation levels
-// Friday 4pm (GENTLE), Monday 4pm (MEDIUM), Tuesday 11am (FULL_ROAST)
-new gcp.cloudscheduler.Job("cron-shame-friday", {
-  name: "brief-shame-friday-dev",
-  region: "europe-west2",
-  schedule: "0 16 * * 5",
-  timeZone: "Europe/London",
-  description: "Shame bot gentle reminder",
-  attemptDeadline: "300s",
-  retryConfig: { retryCount: 2 },
-  httpTarget: {
-    httpMethod: "GET",
-    uri: pulumi.interpolate`${api.uri}/v1/shame-bot`,
-  },
-});
-
-new gcp.cloudscheduler.Job("cron-shame-monday", {
-  name: "brief-shame-monday-dev",
-  region: "europe-west2",
-  schedule: "0 16 * * 1",
-  timeZone: "Europe/London",
-  description: "Shame bot medium escalation",
-  attemptDeadline: "300s",
-  retryConfig: { retryCount: 2 },
-  httpTarget: {
-    httpMethod: "GET",
-    uri: pulumi.interpolate`${api.uri}/v1/shame-bot`,
-  },
-});
-
-new gcp.cloudscheduler.Job("cron-shame-tuesday", {
-  name: "brief-shame-tuesday-dev",
-  region: "europe-west2",
-  schedule: "0 11 * * 2",
-  timeZone: "Europe/London",
-  description: "Shame bot full roast",
-  attemptDeadline: "300s",
-  retryConfig: { retryCount: 2 },
-  httpTarget: {
-    httpMethod: "GET",
-    uri: pulumi.interpolate`${api.uri}/v1/shame-bot`,
-  },
-});
+// Shame bot cron jobs — DISABLED temporarily, re-enable when ready
+// 3 escalation levels hitting GET /v1/shame-bot:
+//   Friday 4pm UK  (GENTLE)     — schedule: "0 16 * * 5"
+//   Monday 4pm UK  (MEDIUM)     — schedule: "0 16 * * 1"
+//   Tuesday 11am UK (FULL_ROAST) — schedule: "0 11 * * 2"
+// All use timeZone: "Europe/London", attemptDeadline: "300s", retryCount: 2
 
 // --- Exports ---
 
 export const secrets = {
   llmGatewayUrl: llmGatewayUrl.secretName,
   openaiApiKey: openaiApiKey.secretName,
-  notionApiKey: notionApiKey.secretName,
-  notionDatabaseId: notionDatabaseId.secretName,
   slackWebhookUrl: slackWebhookUrl.secretName,
   clerkSecretKey: clerkSecretKey.secretName,
   clerkPublishableKey: clerkPublishableKey.secretName,
