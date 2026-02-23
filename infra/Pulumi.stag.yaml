@@ -1,0 +1,5 @@
+config:
+  gcp:project: christopher-little-stag
+  gcp:region: europe-west2
+  brief:environment: stag
+  brief:gcpProjectNumber: "93014782487"

@@ -5,8 +5,6 @@ import { vi } from "vitest";
 // Required env vars for route handlers
 process.env.OPENAI_API_KEY = "test-key";
 process.env.LLM_GATEWAY_URL = "http://llm-gateway.test";
-process.env.NOTION_API_KEY = "test-notion-key";
-process.env.NOTION_DATABASE_ID = "test-db-id";
 process.env.SLACK_WEBHOOK_URL = "http://slack.test/webhook";
 process.env.LIVEKIT_API_KEY = "test-livekit-key";
 process.env.LIVEKIT_API_SECRET = "test-livekit-secret-that-is-long-enough";
@@ -60,6 +58,7 @@ function createMockDb() {
     drizzle: {
       insert: vi.fn().mockReturnValue(chainable()),
       select: vi.fn().mockReturnValue(chainable()),
+      selectDistinct: vi.fn().mockReturnValue(chainable()),
       update: vi.fn().mockReturnValue(chainable()),
       delete: vi.fn().mockReturnValue(chainable()),
     },

@@ -2,7 +2,7 @@ name: Deploy to GCP
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
     paths:
       - 'infra/**'
       - 'packages/api/**'
@@ -16,6 +16,8 @@ on:
         type: choice
         options:
           - dev
+          - stag
+          - prod
 
 permissions:
   id-token: write
@@ -42,6 +44,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/staging" ]; then
+            echo "environment=stag" >> $GITHUB_OUTPUT
           else
             echo "environment=dev" >> $GITHUB_OUTPUT
           fi
@@ -55,6 +59,18 @@ jobs:
               echo "workload_identity_provider=projects/10492061315/locations/global/workloadIdentityPools/github-pool/providers/github-provider" >> $GITHUB_OUTPUT
               echo "service_account=github-actions@christopher-little-dev.iam.gserviceaccount.com" >> $GITHUB_OUTPUT
               echo "artifact_registry_url=europe-west2-docker.pkg.dev/christopher-little-dev/brief" >> $GITHUB_OUTPUT
+              ;;
+            stag)
+              echo "project=christopher-little-stag" >> $GITHUB_OUTPUT
+              echo "workload_identity_provider=projects/93014782487/locations/global/workloadIdentityPools/github-pool/providers/github-provider" >> $GITHUB_OUTPUT
+              echo "service_account=github-actions@christopher-little-stag.iam.gserviceaccount.com" >> $GITHUB_OUTPUT
+              echo "artifact_registry_url=europe-west2-docker.pkg.dev/christopher-little-stag/brief" >> $GITHUB_OUTPUT
+              ;;
+            prod)
+              echo "project=christopher-little-prod" >> $GITHUB_OUTPUT
+              echo "workload_identity_provider=projects/978458954318/locations/global/workloadIdentityPools/github-pool/providers/github-provider" >> $GITHUB_OUTPUT
+              echo "service_account=github-actions@christopher-little-prod.iam.gserviceaccount.com" >> $GITHUB_OUTPUT
+              echo "artifact_registry_url=europe-west2-docker.pkg.dev/christopher-little-prod/brief" >> $GITHUB_OUTPUT
               ;;
           esac
 

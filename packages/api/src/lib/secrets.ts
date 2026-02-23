@@ -16,22 +16,6 @@ export function getLLMGatewayUrl(): string {
   return url;
 }
 
-export function getNotionApiKey(): string {
-  const key = process.env["NOTION_API_KEY"];
-  if (!key) {
-    throw AppError.internal("NOTION_API_KEY environment variable is not set");
-  }
-  return key;
-}
-
-export function getNotionDatabaseId(): string {
-  const id = process.env["NOTION_DATABASE_ID"];
-  if (!id) {
-    throw AppError.internal("NOTION_DATABASE_ID environment variable is not set");
-  }
-  return id;
-}
-
 export function getSlackWebhookUrl(): string {
   const url = process.env["SLACK_WEBHOOK_URL"];
   if (!url) {

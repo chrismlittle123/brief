@@ -10,6 +10,8 @@ on:
         type: choice
         options:
           - dev
+          - stag
+          - prod
 
 permissions:
   id-token: write
@@ -42,6 +44,17 @@ jobs:
               echo "project=christopher-little-dev" >> $GITHUB_OUTPUT
               echo "workload_identity_provider=projects/10492061315/locations/global/workloadIdentityPools/github-pool/providers/github-provider" >> $GITHUB_OUTPUT
               echo "service_account=github-actions@christopher-little-dev.iam.gserviceaccount.com" >> $GITHUB_OUTPUT
+              ;;
+            stag)
+              echo "project=christopher-little-stag" >> $GITHUB_OUTPUT
+              echo "workload_identity_provider=projects/93014782487/locations/global/workloadIdentityPools/github-pool/providers/github-provider" >> $GITHUB_OUTPUT
+              echo "service_account=github-actions@christopher-little-stag.iam.gserviceaccount.com" >> $GITHUB_OUTPUT
+              echo "artifact_registry_url=europe-west2-docker.pkg.dev/christopher-little-stag/brief" >> $GITHUB_OUTPUT
+              ;;
+            prod)
+              echo "project=christopher-little-prod" >> $GITHUB_OUTPUT
+              echo "workload_identity_provider=projects/978458954318/locations/global/workloadIdentityPools/github-pool/providers/github-provider" >> $GITHUB_OUTPUT
+              echo "service_account=github-actions@christopher-little-prod.iam.gserviceaccount.com" >> $GITHUB_OUTPUT
               ;;
           esac
 

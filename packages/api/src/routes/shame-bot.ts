@@ -1,11 +1,9 @@
 import { defineRoute, z, AppError } from "@progression-labs/fastify-api";
+import type { FastifyInstance } from "fastify";
+import { gte } from "drizzle-orm";
+import { updates } from "../db/schema.js";
 import { LLMClient } from "../lib/llm.js";
-import {
-  getLLMGatewayUrl,
-  getNotionApiKey,
-  getNotionDatabaseId,
-  getSlackWebhookUrl,
-} from "../lib/secrets.js";
+import { getLLMGatewayUrl, getSlackWebhookUrl } from "../lib/secrets.js";
 import {
   SHAME_PROMPT,
   TEAM_MEMBERS,
@@ -21,62 +19,22 @@ function getCurrentWeekMonday(): string {
   return monday.toISOString().split("T")[0];
 }
 
-type NotionPerson = {
-  properties?: {
-    Person?: {
-      email?: string;
-      people?: Array<{ person?: { email?: string } }>;
-    };
-  };
-};
+async function getSubmittedEmails(app: FastifyInstance): Promise<string[]> {
+  if (!app.db) throw AppError.internal("Database not configured");
 
-function extractEmailsFromResults(results: NotionPerson[]): string[] {
+  const weekOf = getCurrentWeekMonday();
+  const rows = await app.db.drizzle
+    .selectDistinct({ userId: updates.userId })
+    .from(updates)
+    .where(gte(updates.weekOf, weekOf));
+
   const emails: string[] = [];
-  for (const page of results) {
-    const personProp = page.properties?.Person;
-    if (personProp?.email) {
-      emails.push(personProp.email.toLowerCase());
-    }
-    if (personProp?.people) {
-      for (const person of personProp.people) {
-        if (person.person?.email) {
-          emails.push(person.person.email.toLowerCase());
-        }
-      }
-    }
+  for (const row of rows) {
+    const user = await app.clerkClient.users.getUser(row.userId);
+    const email = user.emailAddresses[0]?.emailAddress;
+    if (email) emails.push(email.toLowerCase());
   }
   return emails;
-}
-
-async function getSubmittedEmails(): Promise<string[]> {
-  const notionApiKey = getNotionApiKey();
-  const databaseId = getNotionDatabaseId();
-  const weekOf = getCurrentWeekMonday();
-
-  const response = await fetch(
-    `https://api.notion.com/v1/databases/${databaseId}/query`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${notionApiKey}`,
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        filter: {
-          property: "Submitted At",
-          date: { on_or_after: weekOf },
-        },
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw AppError.internal(`Notion API error: ${response.status}`);
-  }
-
-  const data = (await response.json()) as { results: NotionPerson[] };
-  return extractEmailsFromResults(data.results);
 }
 
 const REFERENCE_THEMES = [
@@ -182,8 +140,8 @@ const shameBotResponseSchema = z.object({
   message: z.string(),
 });
 
-async function shameBotHandler() {
-  const submittedEmails = await getSubmittedEmails();
+async function shameBotHandler(app: FastifyInstance) {
+  const submittedEmails = await getSubmittedEmails(app);
 
   const delinquents = TEAM_MEMBERS.filter(
     (member) => !submittedEmails.includes(member.email.toLowerCase())
@@ -221,7 +179,7 @@ export const shameBotGetRoute = defineRoute({
   schema: {
     response: { 200: shameBotResponseSchema },
   },
-  handler: async () => shameBotHandler(),
+  handler: async (request) => shameBotHandler(request.server),
 });
 
 export const shameBotPostRoute = defineRoute({
@@ -233,5 +191,5 @@ export const shameBotPostRoute = defineRoute({
   schema: {
     response: { 200: shameBotResponseSchema },
   },
-  handler: async () => shameBotHandler(),
+  handler: async (request) => shameBotHandler(request.server),
 });
