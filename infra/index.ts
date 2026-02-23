@@ -193,49 +193,12 @@ new gcp.cloudscheduler.Job("cron-calendar-reminders", {
   },
 });
 
-// Shame bot — 3 escalation levels
-// Friday 4pm (GENTLE), Monday 4pm (MEDIUM), Tuesday 11am (FULL_ROAST)
-new gcp.cloudscheduler.Job("cron-shame-friday", {
-  name: `brief-shame-friday-${environment}`,
-  region,
-  schedule: "0 16 * * 5",
-  timeZone: "Europe/London",
-  description: "Shame bot gentle reminder",
-  attemptDeadline: "300s",
-  retryConfig: { retryCount: 2 },
-  httpTarget: {
-    httpMethod: "GET",
-    uri: pulumi.interpolate`${api.uri}/v1/shame-bot`,
-  },
-});
-
-new gcp.cloudscheduler.Job("cron-shame-monday", {
-  name: `brief-shame-monday-${environment}`,
-  region,
-  schedule: "0 16 * * 1",
-  timeZone: "Europe/London",
-  description: "Shame bot medium escalation",
-  attemptDeadline: "300s",
-  retryConfig: { retryCount: 2 },
-  httpTarget: {
-    httpMethod: "GET",
-    uri: pulumi.interpolate`${api.uri}/v1/shame-bot`,
-  },
-});
-
-new gcp.cloudscheduler.Job("cron-shame-tuesday", {
-  name: `brief-shame-tuesday-${environment}`,
-  region,
-  schedule: "0 11 * * 2",
-  timeZone: "Europe/London",
-  description: "Shame bot full roast",
-  attemptDeadline: "300s",
-  retryConfig: { retryCount: 2 },
-  httpTarget: {
-    httpMethod: "GET",
-    uri: pulumi.interpolate`${api.uri}/v1/shame-bot`,
-  },
-});
+// Shame bot cron jobs — DISABLED temporarily, re-enable when ready
+// 3 escalation levels hitting GET /v1/shame-bot:
+//   Friday 4pm UK  (GENTLE)     — schedule: "0 16 * * 5"
+//   Monday 4pm UK  (MEDIUM)     — schedule: "0 16 * * 1"
+//   Tuesday 11am UK (FULL_ROAST) — schedule: "0 11 * * 2"
+// All use timeZone: "Europe/London", attemptDeadline: "300s", retryCount: 2
 
 // --- Exports ---
 
